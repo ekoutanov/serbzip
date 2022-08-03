@@ -56,22 +56,34 @@ fn parse_line() {
 fn reduce() {
     struct Case<'a> {
         word: &'a str,
-        expect: &'a str,
+        expect: Reduction,
     }
     let cases = vec![
         Case {
             word: "fox",
-            expect: "fx",
+            expect: Reduction { reduced: String::from("fx"), leading_capital: false, trailing_capitals: 0},
         },
         Case {
             word: " foxy ",
-            expect: " fxy ",
+            expect: Reduction { reduced: String::from(" fxy "), leading_capital: false, trailing_capitals: 0},
+        },
+        Case {
+            word: "Fox",
+            expect: Reduction { reduced: String::from("Fx"), leading_capital: true, trailing_capitals: 0},
+        },
+        Case {
+            word: "FoX",
+            expect: Reduction { reduced: String::from("FX"), leading_capital: true, trailing_capitals: 1},
+        },
+        Case {
+            word: " FoX",
+            expect: Reduction { reduced: String::from(" FX"), leading_capital: false, trailing_capitals: 2},
         },
     ];
 
     for case in cases {
-        let actual = Word::reduce(case.word);
-        assert_eq!(case.expect, &actual, "for input '{}'", case.word);
+        let actual = Reduction::from(case.word);
+        assert_eq!(case.expect, actual, "for input '{}'", case.word);
     }
 }
 
