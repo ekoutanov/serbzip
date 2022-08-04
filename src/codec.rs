@@ -1,7 +1,6 @@
-use std::collections::hash_map::Entry;
-use std::collections::HashMap;
-use std::fmt::Write;
-use std::ops::Index;
+pub mod dict;
+
+use dict::Dict;
 
 #[derive(Debug, PartialEq)]
 struct Word(u8, String);
@@ -29,15 +28,17 @@ impl From<&str> for Reduction {
         let mut leading_capital = false;
         let mut trailing_capitals = 0;
         for (position, ch) in word.chars().enumerate() {
-            if !is_vowel(ch) {
-                reduced.push(ch);
-            }
-
             if ch.is_uppercase() {
                 match position {
                     0 => leading_capital = true,
                     _ => trailing_capitals += 1
                 }
+
+                if !is_vowel(ch) {
+                    reduced.push(ch.to_lowercase().next().unwrap())
+                }
+            } else if !is_vowel(ch) {
+                reduced.push(ch);
             }
         }
         return Self { reduced, leading_capital, trailing_capitals }
@@ -77,48 +78,12 @@ impl Word {
     }
 }
 
-#[derive(Debug)]
-pub struct Dict {
-    entries: HashMap<String, Vec<String>>
-}
-
-impl Default for Dict {
-    fn default() -> Self {
-        Self { entries: HashMap::new() }
-    }
-}
-
-impl Dict {
-    pub fn populate(&mut self, line: &[String]) {
-        for word in line.into_iter() {
-            let reduction = Reduction::from(&word as &str).take_if_lowercase();
-            if let Some(Reduction { reduced, .. }) = reduction {
-                let mapped_words = match self.entries.entry(reduced) {
-                    Entry::Occupied(entry) => entry.into_mut(),
-                    Entry::Vacant(entry) => entry.insert(vec![])
-                };
-                mapped_words.push(word.to_owned()); //TODO not owned
-                mapped_words.sort_by(|lhs, rhs| lhs.len().cmp(&rhs.len()));
-            }
-        }
-    }
-
-    pub fn count(&self) -> usize {
-        self.entries.values().map(|values|values.len()).sum()
-    }
-
-    fn position(&self, key: &str) -> Option<usize> {
-        match self.entries.get(key) {
-            None => None,
-            Some(entry) => entry.iter().position(|word| word == key)
-        }
-    }
-}
-
 pub fn compress_line(dict: &Dict, line: &str) -> String {
     let mut buf = String::new();
-    let words = Word::parse_line(line);
-    for (index, word) in words.iter().enumerate() {
+    // let words = Word::parse_line(line);
+    let words = line.split_whitespace();
+    // println!("words: {words:?}");
+    for (index, word) in words.enumerate() {
         if index > 0 {
             buf.push(' ');
         }
@@ -131,9 +96,56 @@ pub fn compress_line(dict: &Dict, line: &str) -> String {
     buf
 }
 
-fn compress_word(dict: &Dict, word: &Word) -> Word {
-    let encoded = Reduction::from(&word.1.to_lowercase() as &str).reduced;
-    Word(0, encoded)
+//TODO don't need &Word here, String (owned) will do
+fn compress_word(dict: &Dict, word: &str) -> Word {
+    let reduction = Reduction::from(word);
+    let lowercase_word = word.to_lowercase();
+    let word = match dict.position(&reduction.reduced, &lowercase_word) {
+        None => {
+            if reduction.is_lowercase() {
+                if word.len() != reduction.reduced.len() {
+                    // the input comprises one or more vowels
+                    Word(0, lowercase_word)
+                } else if !dict.contains_key(word) {
+                    // the input comprises only consonants and its fingerprint is not in the dict
+                    Word(0, lowercase_word)
+                } else {
+                    // the input comprises only consonants and there are other words in the
+                    // dict with a matching fingerprint
+                    Word(0, format!("\\{}", lowercase_word))
+                }
+            } else {
+                Word(0, lowercase_word)
+            }
+        }
+        Some(position) => {
+            // the dictionary contains the lower-cased input
+            Word(position, reduction.reduced)
+        }
+    };
+    Word(word.0, restore_capitalisation(word.1, reduction.leading_capital, reduction.trailing_capitals))
+}
+
+fn restore_capitalisation(lowercase_word: String, leading_capital: bool, trailing_capitals: u8) -> String {
+    match lowercase_word.len() {
+        1 => {
+            if leading_capital {
+                lowercase_word.to_uppercase()
+            } else {
+                lowercase_word
+            }
+        }
+        _ => {
+            if leading_capital && trailing_capitals > 0 {
+                lowercase_word.to_uppercase()
+            } else if leading_capital {
+                let mut chars = lowercase_word.chars();
+                chars.next().unwrap().to_uppercase().to_string() + chars.as_str()
+            } else {
+                lowercase_word
+            }
+        }
+    }
 }
 
 #[cfg(test)]
