@@ -18,7 +18,11 @@ impl Reduction {
     }
 
     fn take_if_lowercase(self) -> Option<Self> {
-        if self.is_lowercase() { Some(self) } else { None }
+        if self.is_lowercase() {
+            Some(self)
+        } else {
+            None
+        }
     }
 }
 
@@ -31,7 +35,7 @@ impl From<&str> for Reduction {
             if ch.is_uppercase() {
                 match position {
                     0 => leading_capital = true,
-                    _ => trailing_capitals += 1
+                    _ => trailing_capitals += 1,
                 }
 
                 if !is_vowel(ch) {
@@ -41,14 +45,18 @@ impl From<&str> for Reduction {
                 reduced.push(ch);
             }
         }
-        return Self { reduced, leading_capital, trailing_capitals }
+        return Self {
+            reduced,
+            leading_capital,
+            trailing_capitals,
+        };
     }
 }
 
 fn is_vowel(ch: char) -> bool {
     match ch {
         'a' | 'e' | 'i' | 'o' | 'u' => true,
-        _ => false
+        _ => false,
     }
 }
 
@@ -122,10 +130,21 @@ fn compress_word(dict: &Dict, word: &str) -> Word {
             Word(position, reduction.reduced)
         }
     };
-    Word(word.0, restore_capitalisation(word.1, reduction.leading_capital, reduction.trailing_capitals))
+    Word(
+        word.0,
+        restore_capitalisation(
+            word.1,
+            reduction.leading_capital,
+            reduction.trailing_capitals != 0,
+        ),
+    )
 }
 
-fn restore_capitalisation(lowercase_word: String, leading_capital: bool, trailing_capitals: u8) -> String {
+fn restore_capitalisation(
+    lowercase_word: String,
+    leading_capital: bool,
+    nonleading_capital: bool,
+) -> String {
     match lowercase_word.len() {
         1 => {
             if leading_capital {
@@ -135,7 +154,7 @@ fn restore_capitalisation(lowercase_word: String, leading_capital: bool, trailin
             }
         }
         _ => {
-            if leading_capital && trailing_capitals > 0 {
+            if leading_capital && nonleading_capital {
                 lowercase_word.to_uppercase()
             } else if leading_capital {
                 let mut chars = lowercase_word.chars();
@@ -164,35 +183,32 @@ pub fn expand_line(dict: &Dict, line: &str) -> String {
 const ESCAPE: u8 = '\\' as u8;
 
 fn expand_word(dict: &Dict, word: Word) -> String {
-    // let chars = word.1.chars();
     if word.1.as_bytes()[0] == ESCAPE {
         // escaped word
         word.1
-    } else if contains_vowels(&word.1) {
-        // word encoded with vowels
-        word.1
     } else {
-        let reduction = Reduction::from(&word.1 as &str);
-        match dict.resolve(&reduction.reduced, word.0) {
-            None => {
-                // the fingerprint is not in the dictionary
-                word.1
+        let mut chars = word.1.chars();
+        let leading_capital = chars.next().unwrap().is_uppercase();
+        let nonleading_capital = chars.next().map_or(false, char::is_uppercase);
+
+        let resolved_lowercase = if contains_vowels(&word.1) {
+            // word encoded with vowels
+            word.1
+        } else {
+            let lowercase_word = word.1.to_lowercase();
+            match dict.resolve(&lowercase_word, word.0) {
+                None => {
+                    // the fingerprint is not in the dictionary
+                    lowercase_word
+                }
+                Some(resolved) => {
+                    // resolved a word from the dictionary
+                    resolved.clone()
+                }
             }
-            Some(resolved) => {
-                // resolved a word from the dictionary
-                resolved.clone()
-            }
-        }
-        // let lowercase = if reduction.is_lowercase() { word.1 } else { word.1.to_lowercase() };
-        // match dict.position(&reduction.reduced, &lowercase) {
-        //     None => {
-        //         // the fingerprint is not in the dictionary
-        //         lowercase
-        //     }
-        //     Some(position) => {
-        //
-        //     }
-        // }
+        };
+
+        restore_capitalisation(resolved_lowercase, leading_capital, nonleading_capital)
     }
 }
 
