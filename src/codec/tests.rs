@@ -42,11 +42,11 @@ fn parse_line() {
     ];
 
     for case in cases {
-        let actual = Word::parse_line(case.line);
+        let actual = EncodedWord::parse_line(case.line);
         let expect = case
             .expect
             .iter()
-            .map(|&(lead, body)| Word(lead, body.to_owned()))
+            .map(|&(lead, body)| EncodedWord(lead, body.to_owned()))
             .collect::<Vec<_>>();
         assert_eq!(expect, actual, "for input '{}'", case.line);
     }
@@ -87,6 +87,41 @@ fn reduce() {
     }
 }
 
+#[test]
+fn split_word() {
+    struct Case<'a> {
+        word: &'a str,
+        expect: (&'a str, &'a str),
+    }
+    let cases = vec![
+        Case {
+            word: "foo",
+            expect: ("foo", "")
+        },
+        Case {
+            word: "foo!🦄",
+            expect: ("foo", "!🦄")
+        },
+        Case {
+            word: "¿foo?",
+            expect: ("", "¿foo?")
+        },
+        Case {
+            word: "123",
+            expect: ("", "123")
+        },
+        Case {
+            word: "foo1.1",
+            expect: ("foo", "1.1")
+        }
+    ];
+
+    for case in cases {
+        let expected = SplitWord { prefix: case.expect.0, suffix: case.expect.1 };
+        let actual = SplitWord::from(case.word);
+        assert_eq!(expected, actual, "for input '{}'", case.word);
+    }
+}
 // struct HashMapBuilder<K, V>(HashMap<K, V>);
 //
 // impl <K, V> HashMapBuilder<K, V> {

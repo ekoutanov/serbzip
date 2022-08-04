@@ -3,10 +3,7 @@ use std::collections::HashMap;
 use std::io;
 use std::io::{Read, Write};
 use bincode::config;
-use bincode::de::read::Reader;
-
 use bincode::error::{DecodeError, EncodeError};
-
 use crate::codec::Reduction;
 
 #[derive(Debug, bincode::Encode, bincode::Decode)]
@@ -21,20 +18,6 @@ impl Default for Dict {
 }
 
 impl Dict {
-    // pub fn populate(&mut self, line: &[String]) {
-    //     for word in line.into_iter() {
-    //         let reduction = Reduction::from(&word as &str).take_if_lowercase();
-    //         if let Some(Reduction { reduced, .. }) = reduction {
-    //             let mapped_words = match self.entries.entry(reduced) {
-    //                 Entry::Occupied(entry) => entry.into_mut(),
-    //                 Entry::Vacant(entry) => entry.insert(vec![])
-    //             };
-    //             mapped_words.push(word.to_owned()); //TODO not owned
-    //             mapped_words.sort_by(|lhs, rhs| lhs.len().cmp(&rhs.len()));
-    //         }
-    //     }
-    // }
-
     pub fn populate(&mut self, line: impl IntoIterator<Item = String>) {
         for word in line {
             let reduction = Reduction::from(&word as &str).take_if_lowercase();

@@ -2,11 +2,10 @@ use clap::Parser;
 use home;
 use serbzip::codec::dict::Dict;
 use serbzip::codec::{compress_line, expand_line};
-use std::ffi::OsStr;
 use std::fs::File;
-use std::io::{BufReader, BufWriter, Error, Read, Write};
-use std::path::{Path, PathBuf};
-use std::{error, fs, io, process};
+use std::io::{BufReader, BufWriter, Write};
+use std::path::{Path};
+use std::{error, io, process};
 
 /// A quasi-lossless Balkanoidal meta-lingual compressor
 #[derive(Parser, Debug)]
@@ -150,40 +149,3 @@ fn process_from_stdin(mut processor: impl FnMut(&str) -> String) {
         }
     }
 }
-
-// fn build_dict<P: AsRef<Path>>(path: P) -> Result<Option<Dict>, io::Error> {
-//     match read_file(path)? {
-//         None => Ok(None),
-//         Some(contents) => {
-//             let mut dict = Dict::default();
-//             for line in contents.lines() {
-//                 let line = line.split_whitespace();
-//                 // let line = line.map(ToOwned::to_owned).collect::<Vec<_>>();
-//                 dict.populate(line.map(ToOwned::to_owned));
-//             }
-//             Ok(Some(dict))
-//         }
-//     }
-// }
-
-// #[derive(Debug)]
-// enum ReadError {
-//     NoSuchFile,
-//     IoError(io::Error)
-// }
-//
-// impl From<io::Error> for ReadError {
-//     fn from(error: Error) -> Self {
-//         ReadError::IoError(error)
-//     }
-// }
-
-// fn read_file<P: AsRef<Path>>(path: P) -> Result<Option<String>, io::Error> {
-//     let path = path.as_ref();
-//     let exists = path.try_exists()?;
-//     if !exists {
-//         return Ok(None)
-//     }
-//
-//     Ok(Some(fs::read_to_string(path)?))
-// }
