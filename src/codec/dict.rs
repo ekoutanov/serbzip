@@ -1,5 +1,6 @@
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::io;
 use std::io::{Read, Write};
 use bincode::config;
 use bincode::de::read::Reader;
@@ -55,6 +56,14 @@ impl Dict {
         self.entries.values().map(|values|values.len()).sum()
     }
 
+    //TODO currently panics if no mapping at position; should return an error instead
+    pub(crate) fn resolve(&self, key: &str, position: u8) -> Option<&String> {
+        match self.entries.get(key) {
+            None => None,
+            Some(entry) => Some(&entry[position as usize])
+        }
+    }
+
     pub(crate) fn position(&self, key: &str, word: &str) -> Option<u8> {
         match self.entries.get(key) {
             None => None,
@@ -70,8 +79,19 @@ impl Dict {
         bincode::encode_into_std_write(self, w, config::standard())
     }
 
-    pub fn load_from_binary_image(r: &mut impl Reader) -> Result<Dict, DecodeError> {
-        bincode::decode_from_reader(r, config::standard())
+    pub fn read_from_binary_image(r: &mut impl Read) -> Result<Dict, DecodeError> {
+        bincode::decode_from_std_read(r, config::standard())
+    }
+
+    pub fn read_from_text_file(r: &mut impl Read) -> Result<Dict, io::Error> {
+        let mut buf = String::new();
+        r.read_to_string(&mut buf)?;
+        let mut dict = Dict::default();
+        for line in buf.lines() {
+            let line = line.split_whitespace();
+            dict.populate(line.map(ToOwned::to_owned));
+        }
+        Ok(dict)
     }
 }
 

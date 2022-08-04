@@ -87,16 +87,15 @@ pub fn compress_line(dict: &Dict, line: &str) -> String {
         if index > 0 {
             buf.push(' ');
         }
-        let encoded_word = compress_word(dict, word);
-        for _ in 0..encoded_word.0 {
+        let compressed_word = compress_word(dict, word);
+        for _ in 0..compressed_word.0 {
             buf.push(' ');
         }
-        buf.push_str(&encoded_word.1);
+        buf.push_str(&compressed_word.1);
     }
     buf
 }
 
-//TODO don't need &Word here, String (owned) will do
 fn compress_word(dict: &Dict, word: &str) -> Word {
     let reduction = Reduction::from(word);
     let lowercase_word = word.to_lowercase();
@@ -146,6 +145,59 @@ fn restore_capitalisation(lowercase_word: String, leading_capital: bool, trailin
             }
         }
     }
+}
+
+pub fn expand_line(dict: &Dict, line: &str) -> String {
+    let mut buf = String::new();
+    let words = Word::parse_line(line);
+    // println!("words: {words:?}");
+    for (index, word) in words.into_iter().enumerate() {
+        if index > 0 {
+            buf.push(' ');
+        }
+        let expanded_word = expand_word(dict, word);
+        buf.push_str(&expanded_word);
+    }
+    buf
+}
+
+const ESCAPE: u8 = '\\' as u8;
+
+fn expand_word(dict: &Dict, word: Word) -> String {
+    // let chars = word.1.chars();
+    if word.1.as_bytes()[0] == ESCAPE {
+        // escaped word
+        word.1
+    } else if contains_vowels(&word.1) {
+        // word encoded with vowels
+        word.1
+    } else {
+        let reduction = Reduction::from(&word.1 as &str);
+        match dict.resolve(&reduction.reduced, word.0) {
+            None => {
+                // the fingerprint is not in the dictionary
+                word.1
+            }
+            Some(resolved) => {
+                // resolved a word from the dictionary
+                resolved.clone()
+            }
+        }
+        // let lowercase = if reduction.is_lowercase() { word.1 } else { word.1.to_lowercase() };
+        // match dict.position(&reduction.reduced, &lowercase) {
+        //     None => {
+        //         // the fingerprint is not in the dictionary
+        //         lowercase
+        //     }
+        //     Some(position) => {
+        //
+        //     }
+        // }
+    }
+}
+
+fn contains_vowels(text: &str) -> bool {
+    text.chars().any(is_vowel)
 }
 
 #[cfg(test)]
