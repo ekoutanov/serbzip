@@ -21,7 +21,7 @@ impl Dict {
     pub fn populate(&mut self, line: impl IntoIterator<Item = String>) {
         for word in line {
             let reduction = Reduction::from(&word as &str).take_if_lowercase();
-            if let Some(Reduction { reduced, .. }) = reduction {
+            if let Some(Reduction { fingerprint: reduced, .. }) = reduction {
                 let mapped_words = match self.entries.entry(reduced) {
                     Entry::Occupied(entry) => entry.into_mut(),
                     Entry::Vacant(entry) => entry.insert(vec![])

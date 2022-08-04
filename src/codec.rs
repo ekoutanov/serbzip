@@ -4,12 +4,16 @@ use dict::Dict;
 
 #[derive(Debug, PartialEq)]
 struct Reduction {
-    reduced: String,
+    fingerprint: String,
     leading_capital: bool,
     trailing_capitals: u8,
 }
 
 impl Reduction {
+    fn new(fingerprint: String, leading_capital: bool, trailing_capitals: u8) -> Self {
+        Reduction { fingerprint, leading_capital, trailing_capitals }
+    }
+
     fn is_lowercase(&self) -> bool {
         !self.leading_capital && self.trailing_capitals == 0
     }
@@ -25,7 +29,7 @@ impl Reduction {
 
 impl From<&str> for Reduction {
     fn from(word: &str) -> Self {
-        let mut reduced = String::new();
+        let mut fingerprint = String::new();
         let mut leading_capital = false;
         let mut trailing_capitals = 0;
         for (position, ch) in word.chars().enumerate() {
@@ -36,17 +40,13 @@ impl From<&str> for Reduction {
                 }
 
                 if !is_vowel(ch) {
-                    reduced.push(ch.to_lowercase().next().unwrap())
+                    fingerprint.push(ch.to_lowercase().next().unwrap())
                 }
             } else if !is_vowel(ch) {
-                reduced.push(ch);
+                fingerprint.push(ch);
             }
         }
-        return Self {
-            reduced,
-            leading_capital,
-            trailing_capitals,
-        };
+        Reduction::new(fingerprint, leading_capital, trailing_capitals)
     }
 }
 
@@ -58,24 +58,32 @@ fn is_vowel(ch: char) -> bool {
 }
 
 #[derive(Debug, PartialEq)]
-struct EncodedWord(u8, String);
+struct EncodedWord {
+    leading_spaces: u8,
+    body: String,
+}
 
 impl EncodedWord {
+    fn new(leading_spaces: u8, body: String) -> Self {
+        assert!(body.len() > 0);
+        EncodedWord { leading_spaces, body }
+    }
+
     fn parse_line(line: &str) -> Vec<EncodedWord> {
         let mut buf = Some(String::new());
-        let mut leading_chars: u8 = 0;
+        let mut leading_spaces: u8 = 0;
         let chars = line.chars();
         let mut words = Vec::new();
         for ch in chars {
             if ch == ' ' {
                 if !buf.as_ref().unwrap().is_empty() {
-                    words.push(EncodedWord(
-                        leading_chars,
-                        buf.replace(String::new()).unwrap(),
-                    ));
-                    leading_chars = 0;
+                    words.push(EncodedWord {
+                        leading_spaces,
+                        body: buf.replace(String::new()).unwrap(),
+                    });
+                    leading_spaces = 0;
                 } else {
-                    leading_chars += 1;
+                    leading_spaces += 1;
                 }
             } else {
                 buf.as_mut().unwrap().push(ch);
@@ -83,7 +91,10 @@ impl EncodedWord {
         }
 
         if !buf.as_ref().unwrap().is_empty() {
-            words.push(EncodedWord(leading_chars, buf.take().unwrap()));
+            words.push(EncodedWord {
+                leading_spaces,
+                body: buf.take().unwrap(),
+            });
         }
         words
     }
@@ -120,10 +131,10 @@ pub fn compress_line(dict: &Dict, line: &str) -> String {
             buf.push(' ');
         }
         let compressed_word = compress_word(dict, word);
-        for _ in 0..compressed_word.0 {
+        for _ in 0..compressed_word.leading_spaces {
             buf.push(' ');
         }
-        buf.push_str(&compressed_word.1);
+        buf.push_str(&compressed_word.body);
     }
     buf
 }
@@ -132,37 +143,37 @@ fn compress_word(dict: &Dict, word: &str) -> EncodedWord {
     let split = SplitWord::from(word);
     let prefix_reduction = Reduction::from(split.prefix);
     let lowercase_prefix = split.prefix.to_lowercase();
-    let encoded_prefix = match dict.position(&prefix_reduction.reduced, &lowercase_prefix) {
+    let encoded_prefix = match dict.position(&prefix_reduction.fingerprint, &lowercase_prefix) {
         None => {
             if prefix_reduction.is_lowercase() {
-                if word.len() != prefix_reduction.reduced.len() {
+                if word.len() != prefix_reduction.fingerprint.len() {
                     // the input comprises one or more vowels
-                    EncodedWord(0, lowercase_prefix)
+                    EncodedWord::new(0, lowercase_prefix)
                 } else if !dict.contains_key(split.prefix) {
                     // the input comprises only consonants and its fingerprint is not in the dict
-                    EncodedWord(0, lowercase_prefix)
+                    EncodedWord::new(0, lowercase_prefix)
                 } else {
                     // the input comprises only consonants and there are other words in the
                     // dict with a matching fingerprint
-                    EncodedWord(0, format!("\\{}", lowercase_prefix))
+                    EncodedWord::new(0, format!("\\{}", lowercase_prefix))
                 }
             } else {
-                EncodedWord(0, lowercase_prefix)
+                EncodedWord::new(0, lowercase_prefix)
             }
         }
         Some(position) => {
             // the dictionary contains the lower-cased input
-            EncodedWord(position, prefix_reduction.reduced)
+            EncodedWord::new(position, prefix_reduction.fingerprint)
         }
     };
 
     let recapitalised_prefix = restore_capitalisation(
-        encoded_prefix.1,
+        encoded_prefix.body,
         prefix_reduction.leading_capital,
         prefix_reduction.trailing_capitals != 0,
     );
 
-    EncodedWord(encoded_prefix.0, recapitalised_prefix + split.suffix)
+    EncodedWord::new(encoded_prefix.leading_spaces, recapitalised_prefix + split.suffix)
 }
 
 fn restore_capitalisation(
@@ -208,7 +219,7 @@ pub fn expand_line(dict: &Dict, line: &str) -> String {
 const ESCAPE: u8 = '\\' as u8;
 
 fn expand_word(dict: &Dict, word: EncodedWord) -> String {
-    let split = SplitWord::from(&word.1);
+    let split = SplitWord::from(&word.body);
     let recapitalised_prefix = if split.prefix.as_bytes()[0] == ESCAPE {
         // escaped word
         split.prefix.to_owned()
@@ -222,7 +233,7 @@ fn expand_word(dict: &Dict, word: EncodedWord) -> String {
             split.prefix.to_owned()
         } else {
             let lowercase_word = split.prefix.to_lowercase();
-            match dict.resolve(&lowercase_word, word.0) {
+            match dict.resolve(&lowercase_word, word.leading_spaces) {
                 None => {
                     // the fingerprint is not in the dictionary
                     lowercase_word

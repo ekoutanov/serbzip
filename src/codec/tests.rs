@@ -46,7 +46,7 @@ fn parse_line() {
         let expect = case
             .expect
             .iter()
-            .map(|&(lead, body)| EncodedWord(lead, body.to_owned()))
+            .map(|&(leading_spaces, body)| EncodedWord::new(leading_spaces, body.to_owned()))
             .collect::<Vec<_>>();
         assert_eq!(expect, actual, "for input '{}'", case.line);
     }
@@ -61,23 +61,23 @@ fn reduce() {
     let cases = vec![
         Case {
             word: "fox",
-            expect: Reduction { reduced: String::from("fx"), leading_capital: false, trailing_capitals: 0},
+            expect: Reduction { fingerprint: String::from("fx"), leading_capital: false, trailing_capitals: 0},
         },
         Case {
             word: " foxy ",
-            expect: Reduction { reduced: String::from(" fxy "), leading_capital: false, trailing_capitals: 0},
+            expect: Reduction { fingerprint: String::from(" fxy "), leading_capital: false, trailing_capitals: 0},
         },
         Case {
             word: "Fox",
-            expect: Reduction { reduced: String::from("fx"), leading_capital: true, trailing_capitals: 0},
+            expect: Reduction { fingerprint: String::from("fx"), leading_capital: true, trailing_capitals: 0},
         },
         Case {
             word: "FoX",
-            expect: Reduction { reduced: String::from("fx"), leading_capital: true, trailing_capitals: 1},
+            expect: Reduction { fingerprint: String::from("fx"), leading_capital: true, trailing_capitals: 1},
         },
         Case {
             word: " FoX",
-            expect: Reduction { reduced: String::from(" fx"), leading_capital: false, trailing_capitals: 2},
+            expect: Reduction { fingerprint: String::from(" fx"), leading_capital: false, trailing_capitals: 2},
         },
     ];
 
