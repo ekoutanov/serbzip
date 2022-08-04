@@ -57,7 +57,7 @@ fn populate_should_fill_to_fingerprint_limit() {
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected="too many words associated")]
 fn populate_should_not_fill_past_fingerprint_limit() {
     let mut dict = Dict::default();
     let words = (0..256).into_iter().map(|i| format!("test-{}", "a".repeat(i))).collect::<Vec<_>>();

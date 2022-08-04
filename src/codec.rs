@@ -75,7 +75,7 @@ impl EncodedWord {
         let chars = line.chars();
         let mut words = Vec::new();
         for ch in chars {
-            if ch == ' ' {
+            if ch == ' ' || ch == '\u{200E}' {  // we also support the LRM codepoint
                 if !buf.as_ref().unwrap().is_empty() {
                     words.push(EncodedWord {
                         leading_spaces,
@@ -149,7 +149,7 @@ fn compress_word(dict: &Dict, word: &str) -> EncodedWord {
                 if word.len() != prefix_reduction.fingerprint.len() {
                     // the input comprises one or more vowels
                     EncodedWord::new(0, lowercase_prefix)
-                } else if !dict.contains_key(split.prefix) {
+                } else if !dict.contains_fingerprint(split.prefix) {
                     // the input comprises only consonants and its fingerprint is not in the dict
                     EncodedWord::new(0, lowercase_prefix)
                 } else {

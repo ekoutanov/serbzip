@@ -1,11 +1,13 @@
+use std::{error, io, process};
+use std::fs::File;
+use std::io::{BufRead, BufReader, BufWriter, Read, Write};
+use std::path::Path;
+
 use clap::Parser;
 use home;
-use serbzip::codec::dict::Dict;
+
 use serbzip::codec::{compress_line, expand_line};
-use std::fs::File;
-use std::io::{BufReader, BufWriter, Write};
-use std::path::{Path};
-use std::{error, io, process};
+use serbzip::codec::dict::Dict;
 
 /// A quasi-lossless Balkanoidal meta-lingual compressor
 #[derive(Parser, Debug)]
@@ -23,11 +25,11 @@ struct Args {
     #[clap(short, long, value_parser)]
     dictionary: Option<String>,
 
-    /// Input file (or '-' for stdin)
+    /// Input file (defaults to stdin)
     #[clap(short, long, value_parser)]
     input_file: Option<String>,
 
-    /// Output file (or '-' for stdout)
+    /// Output file (defaults to stdout)
     #[clap(short, long, value_parser)]
     output_file: Option<String>,
 
@@ -37,11 +39,10 @@ struct Args {
 }
 
 fn main() -> Result<(), Box<dyn error::Error>> {
-    let mut args = Args::parse();
+    let mut args = Args::parse() as Args;
     //eprintln!("args: {args:?}");
 
-    let dict_file: Option<String> = args.dictionary.take();
-    let dict_path = dict_file
+    let dict_path = args.dictionary.take()
         .map(|path| {
             let specified_path = Path::new(&path);
             if specified_path.exists() {
@@ -119,33 +120,68 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         process::exit(1)
     }
 
+    let input_reader: Box<dyn Read> = args.input_file.map_or(Box::new(io::stdin()), |path| {
+        let path = Path::new(&path);
+        if !path.exists() {
+            eprintln!("Failed to open input file {path:?}");
+            process::exit(1)
+        }
+        Box::new(File::open(path).unwrap())
+    });
+
+    let output_writer: Box<dyn Write> = args.output_file.map_or(Box::new(io::stdout()), |path| {
+        Box::new(File::create(path).unwrap())
+    });
+
     if args.compress {
-        compress_from_stdin(&dict);
+        compress(&dict, &mut BufReader::new(input_reader), &mut BufWriter::new(output_writer))?;
     } else {
-        expand_from_stdin(&dict);
+        expand(&dict, &mut BufReader::new(input_reader), &mut BufWriter::new(output_writer))?;
     }
     Ok(())
 }
 
-fn compress_from_stdin(dict: &Dict) {
-    process_from_stdin(|line| compress_line(&dict, line));
+fn compress(dict: &Dict, r: &mut impl BufRead, w: &mut impl Write) -> Result<(), io::Error> {
+    process(r, w, |line| compress_line(&dict, line))
 }
 
-fn expand_from_stdin(dict: &Dict) {
-    process_from_stdin(|line| expand_line(&dict, line));
+fn expand(dict: &Dict, r: &mut impl BufRead, w: &mut impl Write) -> Result<(), io::Error> {
+    process(r, w, |line| expand_line(&dict, line))
 }
 
-fn process_from_stdin(mut processor: impl FnMut(&str) -> String) {
+fn process(r: &mut impl BufRead, w: &mut impl Write, mut processor: impl FnMut(&str) -> String) -> Result<(), io::Error> {
     let mut read_buf = String::new();
     loop {
-        match io::stdin().read_line(&mut read_buf) {
-            Ok(0) => process::exit(0),
-            Ok(size) => {
+        match r.read_line(&mut read_buf)? {
+            0 => return Ok(()),
+            size => {
                 let output = processor(&read_buf[0..size - 1]);
-                println!("{}", output);
+                writeln!(w, "{}", output)?;
                 read_buf.clear();
             }
-            Err(_) => process::exit(1),
         }
     }
 }
+
+// fn compress_from_stdin(dict: &Dict) {
+//     process_from_stdin(|line| compress_line(&dict, line));
+// }
+//
+// fn expand_from_stdin(dict: &Dict) {
+//     process_from_stdin(|line| expand_line(&dict, line));
+// }
+//
+// fn process_from_stdin(mut processor: impl FnMut(&str) -> String) {
+//     let mut read_buf = String::new();
+//     loop {
+//         match io::stdin().read_line(&mut read_buf) {
+//             Ok(0) => return,
+//             Ok(size) => {
+//                 let output = processor(&read_buf[0..size - 1]);
+//                 println!("{}", output);
+//                 read_buf.clear();
+//             }
+//             Err(_) => process::exit(1), //TODO return error and handle outside
+//         }
+//     }
+// }

@@ -27,7 +27,7 @@ impl Dict {
                     Entry::Vacant(entry) => entry.insert(vec![])
                 };
                 if mapped_words.len() == u8::MAX as usize {
-                    panic!("too many word associated with the fingerprint '{}'", word);
+                    panic!("too many words associated with the fingerprint '{}'", word);
                 }
                 mapped_words.push(word);
                 mapped_words.sort_by(|lhs, rhs| lhs.len().cmp(&rhs.len()));
@@ -47,15 +47,15 @@ impl Dict {
         }
     }
 
-    pub(crate) fn position(&self, key: &str, word: &str) -> Option<u8> {
-        match self.entries.get(key) {
+    pub(crate) fn position(&self, fingerprint: &str, word: &str) -> Option<u8> {
+        match self.entries.get(fingerprint) {
             None => None,
             Some(entry) => entry.iter().position(|existing| existing == word).map(|pos| pos as u8)
         }
     }
 
-    pub(crate) fn contains_key(&self, key: &str) -> bool {
-        self.entries.contains_key(key)
+    pub(crate) fn contains_fingerprint(&self, fingerprint: &str) -> bool {
+        self.entries.contains_key(fingerprint)
     }
 
     pub fn write_to_binary_image(&self, w: &mut impl Write) -> Result<usize, EncodeError> {
