@@ -61,6 +61,10 @@ fn is_vowel(ch: char) -> bool {
     }
 }
 
+trait Fragment {
+    fn append_to(&self, buf: &mut String);
+}
+
 #[derive(Debug, PartialEq)]
 struct EncodedWord {
     leading_spaces: u8,
@@ -101,6 +105,15 @@ impl EncodedWord {
             });
         }
         words
+    }
+}
+
+impl Fragment for EncodedWord {
+    fn append_to(&self, buf: &mut String) {
+        for _ in 0..self.leading_spaces {
+            buf.push(' ');
+        }
+        buf.push_str(&self.body);
     }
 }
 
@@ -151,10 +164,7 @@ pub fn compress_line(dict: &Dict, line: &str) -> String {
             buf.push(' ');
         }
         let compressed_word = compress_word(dict, word);
-        for _ in 0..compressed_word.leading_spaces {
-            buf.push(' ');
-        }
-        buf.push_str(&compressed_word.body);
+        compressed_word.append_to(&mut buf);
     }
     buf
 }
