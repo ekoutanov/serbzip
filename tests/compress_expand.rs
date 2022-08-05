@@ -16,7 +16,8 @@ fn compress_and_expand() {
     __compress_and_expand(&dict, "test_data/the_raven.txt");
     __compress_and_expand(&dict, "test_data/mormon.txt");
     __compress_and_expand(&dict, "test_data/sherlock_holmes.txt");
-    __compress_and_expand(&dict, "test_data/anna_karenina.txt");
+    __compress_and_expand(&dict, "test_data/anna_karenina_eng.txt");
+    __compress_and_expand(&dict, "test_data/anna_karenina_rus.txt");
 }
 
 fn __compress_and_expand(dict: &Dict, original_file: &str) {

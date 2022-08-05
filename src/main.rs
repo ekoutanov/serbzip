@@ -110,7 +110,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             eprintln!("Only .img files are supported for compiled dictionaries");
             process::exit(1);
         }
-        eprintln!("Writing compiled dictionary image to {image_output_file}");
+        eprintln!("Writing compiled dictionary image to {image_output_file} ({words} words)", words = dict.count());
         let mut writer = BufWriter::new(File::create(image_output_file)?);
         dict.write_to_binary_image(&mut writer)?;
         writer.flush().unwrap();

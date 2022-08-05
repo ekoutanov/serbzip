@@ -1,5 +1,6 @@
 pub mod dict;
 
+use std::borrow::Cow;
 use dict::Dict;
 use crate::codec::CompressionRule::{Conflict, InDict, NoFingerprintInDict, NotInDictWithVowels};
 
@@ -54,6 +55,8 @@ impl From<&str> for Reduction {
 fn is_vowel(ch: char) -> bool {
     match ch {
         'a' | 'A' | 'e' | 'E' | 'i' | 'I' | 'o' | 'O' | 'u' | 'U' => true,
+        'а' | 'А' | 'э' | 'Э' | 'ы' | 'Ы' | 'у' | 'У' | 'я' | 'Я' => true,
+        'е' | 'Е' | 'ё' | 'Ё' | 'ю' | 'Ю' | 'и' | 'И' | 'о' | 'О' => true,
         _ => false,
     }
 }
@@ -102,12 +105,12 @@ impl EncodedWord {
 }
 
 #[derive(Debug, PartialEq)]
-struct SplitWord {
-    prefix: String,
-    suffix: String,
+struct SplitWord<'a> {
+    prefix: Cow<'a, str>,
+    suffix: Cow<'a, str>,
 }
 
-impl SplitWord {
+impl SplitWord<'_> {
     fn from(word: &str) -> SplitWord {
         let position = word.chars().enumerate().position(|(position, ch)| {
             match position {
@@ -117,13 +120,13 @@ impl SplitWord {
         });
         match position {
             None => SplitWord {
-                prefix: word.to_owned(),
-                suffix: String::from(""),
+                prefix: Cow::Borrowed(word),
+                suffix: Cow::Borrowed(""),
             },
             Some(position) => {
                 let prefix = String::from_iter(word.chars().take(position));
                 let suffix = String::from_iter(word.chars().skip(position));
-                SplitWord { prefix, suffix }
+                SplitWord { prefix: Cow::Owned(prefix), suffix: Cow::Owned(suffix) }
             },
         }
         // let (prefix, suffix): (Vec<_>, Vec<_>) = word.chars().enumerate().partition(|&(position, ch)| {
@@ -256,7 +259,7 @@ fn expand_word(dict: &Dict, word: EncodedWord) -> Result<String, String> {
         if split.prefix.len() > 1 {
             split.prefix[1..split.prefix.len()].to_owned()
         } else {
-            split.prefix.to_owned()
+            split.prefix.into_owned()
         }
     } else {
         let mut chars = split.prefix.chars();
@@ -265,7 +268,7 @@ fn expand_word(dict: &Dict, word: EncodedWord) -> Result<String, String> {
 
         let resolved_lowercase = if contains_vowels(&split.prefix) {
             // word encoded with vowels
-            split.prefix.to_owned()
+            split.prefix.into_owned()
         } else {
             let lowercase_word = split.prefix.to_lowercase();
             match dict.resolve(&lowercase_word, word.leading_spaces)? {

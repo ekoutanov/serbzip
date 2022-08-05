@@ -126,10 +126,22 @@ fn split_word() {
             input: "\\",
             expect: ("\\", "")
         },
+        Case {
+            input: "яблоко",
+            expect: ("яблоко", "")
+        },
+        Case {
+            input: "яблоко!",
+            expect: ("яблоко", "!")
+        },
+        Case {
+            input: "\\яблоко!",
+            expect: ("\\яблоко", "!")
+        },
     ];
 
     for case in cases {
-        let expected = SplitWord { prefix: case.expect.0.to_owned(), suffix: case.expect.1.to_owned() };
+        let expected = SplitWord { prefix: Cow::Borrowed(case.expect.0), suffix: Cow::Borrowed(case.expect.1) };
         let actual = SplitWord::from(case.input);
         assert_eq!(expected, actual, "for input '{}'", case.input);
     }
@@ -272,6 +284,26 @@ fn compress_expand_word() {
             dict_words: vec![""],
             input: "attaché,",
             expect: (0, "attaché,")
+        },
+        Case {
+            dict_words: vec!["яблоко"],
+            input: "яблоко",
+            expect: (0, "блк")
+        },
+        Case {
+            dict_words: vec!["яблоко"],
+            input: "Яблоко",
+            expect: (0, "Блк")
+        },
+        Case {
+            dict_words: vec!["яблоко", "яблоки"],
+            input: "Яблоки",
+            expect: (1, "Блк")
+        },
+        Case {
+            dict_words: vec![""],
+            input: "уж",
+            expect: (0, "уж")
         }
     ];
 
