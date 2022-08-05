@@ -36,7 +36,6 @@ pub fn transcode(
                 match processor(line_no, &read_buf[0..size - 1]) {
                     Ok(output) => {
                         writeln!(w, "{}", output)?;
-                        w.flush()?;
                         read_buf.clear();
                     }
                     Err(error) => {

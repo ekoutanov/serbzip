@@ -8,10 +8,9 @@ use clap::Parser;
 use home;
 use serbzip::codec;
 
-use serbzip::codec::{compress_line, expand_line};
 use serbzip::codec::dict::Dict;
 use serbzip::transcoder;
-use serbzip::transcoder::TranscodeError;
+use serbzip::transcoder::{TranscodeError};
 
 /// A quasi-lossless Balkanoidal meta-lingual compressor
 #[derive(Parser, Debug)]
@@ -133,14 +132,14 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         Box::new(File::open(path).unwrap())
     });
 
-    let output_writer: Box<dyn Write> = args.output_file.map_or(Box::new(io::stdout()), |path| {
-        Box::new(File::create(path).unwrap())
+    let mut output_writer: Box<dyn Write> = args.output_file.map_or(Box::new(io::stdout()), |path| {
+        Box::new(BufWriter::new(File::create(path).unwrap()))
     });
 
     if args.compress {
-        compress(&dict, &mut BufReader::new(input_reader), &mut BufWriter::new(output_writer))?;
+        compress(&dict, &mut BufReader::new(input_reader), &mut output_writer)?;
     } else {
-        expand(&dict, &mut BufReader::new(input_reader), &mut BufWriter::new(output_writer))?;
+        expand(&dict, &mut BufReader::new(input_reader), &mut output_writer)?;
     }
     Ok(())
 }
