@@ -1,26 +1,34 @@
-use rand::{thread_rng, RngCore};
+use rand::{RngCore};
 use serbzip::{codec, transcoder};
 use serbzip::codec::dict::Dict;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
-use std::{fs, io};
+use std::{fs};
 use serbzip::transcoder::TranscodeError;
 
 #[test]
-fn compress_and_expand() {
-    let dict =
-        Dict::read_from_binary_image(&mut BufReader::new(File::open("dict.img").unwrap())).unwrap();
-
-    __compress_and_expand(&dict, "test_data/antigonish.txt");
-    __compress_and_expand(&dict, "test_data/the_raven.txt");
-    __compress_and_expand(&dict, "test_data/mormon.txt");
-    __compress_and_expand(&dict, "test_data/sherlock_holmes.txt");
-    __compress_and_expand(&dict, "test_data/anna_karenina_eng.txt");
-    __compress_and_expand(&dict, "test_data/anna_karenina_rus.txt");
+fn compress_and_expand_small_docs() {
+    let dict = read_default_dict();
+    test_compress_and_expand(&dict, "test_data/antigonish.txt");
+    test_compress_and_expand(&dict, "test_data/the_raven.txt");
+    test_compress_and_expand(&dict, "test_data/sherlock_holmes.txt");
 }
 
-fn __compress_and_expand(dict: &Dict, original_file: &str) {
+#[test]
+#[ignore]
+fn compress_and_expand_large_docs() {
+    let dict = read_default_dict();
+    test_compress_and_expand(&dict, "test_data/mormon.txt");
+    test_compress_and_expand(&dict, "test_data/anna_karenina_eng.txt");
+    test_compress_and_expand(&dict, "test_data/anna_karenina_rus.txt");
+}
+
+fn read_default_dict() -> Dict {
+    Dict::read_from_binary_image(&mut BufReader::new(File::open("dict.img").unwrap())).unwrap()
+}
+
+fn test_compress_and_expand(dict: &Dict, original_file: &str) {
     let original_path = Path::new(original_file);
     let compressed_path = generate_random_path("sz");
     let expanded_path = generate_random_path("txt");
