@@ -9,3 +9,6 @@ edition = "2021"
 bincode = "2.0.0-rc.1"
 clap = { version = "3.2.16", features = ["derive"] }
 home = "0.5.3"
+
+[dev-dependencies]
+rand = "0.8.5"

@@ -47,6 +47,16 @@ fn dict_populate_incremental() {
         ]),
         dict.entries
     );
+
+    dict.populate(stringify(["i", "aio"]));
+    assert_eq!(
+        HashMap::from([
+            (String::from("n"), stringify(["no", "on", "an", "in", "uno", "one"])),
+            (String::from("nn"), stringify(["inn", "anna"])),
+            (String::from("hlf-tm"), stringify(["half-time"]))
+        ]),
+        dict.entries
+    );
 }
 
 #[test]

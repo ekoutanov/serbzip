@@ -148,32 +148,32 @@ fn compress_word(dict: &Dict, word: &str) -> EncodedWord {
             if prefix_reduction.is_lowercase() {
                 if word.len() != prefix_reduction.fingerprint.len() {
                     // the input comprises one or more vowels
-                    EncodedWord::new(0, lowercase_prefix)
+                    (0, lowercase_prefix)
                 } else if !dict.contains_fingerprint(split.prefix) {
                     // the input comprises only consonants and its fingerprint is not in the dict
-                    EncodedWord::new(0, lowercase_prefix)
+                    (0, lowercase_prefix)
                 } else {
                     // the input comprises only consonants and there are other words in the
                     // dict with a matching fingerprint
-                    EncodedWord::new(0, format!("\\{}", lowercase_prefix))
+                    (0, format!("\\{}", lowercase_prefix))
                 }
             } else {
-                EncodedWord::new(0, lowercase_prefix)
+                (0, lowercase_prefix)
             }
         }
         Some(position) => {
             // the dictionary contains the lower-cased input
-            EncodedWord::new(position, prefix_reduction.fingerprint)
+            (position, prefix_reduction.fingerprint)
         }
     };
 
     let recapitalised_prefix = restore_capitalisation(
-        encoded_prefix.body,
+        encoded_prefix.1,
         prefix_reduction.leading_capital,
         prefix_reduction.trailing_capitals != 0,
     );
 
-    EncodedWord::new(encoded_prefix.leading_spaces, recapitalised_prefix + split.suffix)
+    EncodedWord::new(encoded_prefix.0, recapitalised_prefix + split.suffix)
 }
 
 fn restore_capitalisation(
@@ -202,7 +202,7 @@ fn restore_capitalisation(
     }
 }
 
-pub fn expand_line(dict: &Dict, line: &str) -> String {
+pub fn expand_line(dict: &Dict, line: &str) -> Result<String, String> {
     let mut buf = String::new();
     let words = EncodedWord::parse_line(line);
     // println!("words: {words:?}");
@@ -210,16 +210,20 @@ pub fn expand_line(dict: &Dict, line: &str) -> String {
         if index > 0 {
             buf.push(' ');
         }
-        let expanded_word = expand_word(dict, word);
+        let expanded_word = expand_word(dict, word)?;
         buf.push_str(&expanded_word);
     }
-    buf
+    Ok(buf)
 }
 
 const ESCAPE: u8 = '\\' as u8;
 
-fn expand_word(dict: &Dict, word: EncodedWord) -> String {
+fn expand_word(dict: &Dict, word: EncodedWord) -> Result<String, String> {
     let split = SplitWord::from(&word.body);
+    if split.prefix.is_empty() {
+        return Ok(word.body)
+    }
+
     let recapitalised_prefix = if split.prefix.as_bytes()[0] == ESCAPE {
         // escaped word
         split.prefix.to_owned()
@@ -233,7 +237,7 @@ fn expand_word(dict: &Dict, word: EncodedWord) -> String {
             split.prefix.to_owned()
         } else {
             let lowercase_word = split.prefix.to_lowercase();
-            match dict.resolve(&lowercase_word, word.leading_spaces) {
+            match dict.resolve(&lowercase_word, word.leading_spaces)? {
                 None => {
                     // the fingerprint is not in the dictionary
                     lowercase_word
@@ -248,7 +252,7 @@ fn expand_word(dict: &Dict, word: EncodedWord) -> String {
         restore_capitalisation(resolved_lowercase, leading_capital, nonleading_capital)
     };
 
-    recapitalised_prefix + split.suffix
+    Ok(recapitalised_prefix + split.suffix)
 }
 
 fn contains_vowels(text: &str) -> bool {

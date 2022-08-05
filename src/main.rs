@@ -1,13 +1,17 @@
 use std::{error, io, process};
+use std::fmt::{Debug, Display, Formatter};
 use std::fs::File;
-use std::io::{BufRead, BufReader, BufWriter, Read, Write};
+use std::io::{BufRead, BufReader, BufWriter, Error, Read, Write};
 use std::path::Path;
 
 use clap::Parser;
 use home;
+use serbzip::codec;
 
 use serbzip::codec::{compress_line, expand_line};
 use serbzip::codec::dict::Dict;
+use serbzip::transcoder;
+use serbzip::transcoder::TranscodeError;
 
 /// A quasi-lossless Balkanoidal meta-lingual compressor
 #[derive(Parser, Debug)]
@@ -141,47 +145,10 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     Ok(())
 }
 
-fn compress(dict: &Dict, r: &mut impl BufRead, w: &mut impl Write) -> Result<(), io::Error> {
-    process(r, w, |line| compress_line(&dict, line))
+fn compress(dict: &Dict, r: &mut impl BufRead, w: &mut impl Write) -> Result<(), TranscodeError> {
+    transcoder::transcode(r, w, |_, line| Ok(codec::compress_line(&dict, line)))
 }
 
-fn expand(dict: &Dict, r: &mut impl BufRead, w: &mut impl Write) -> Result<(), io::Error> {
-    process(r, w, |line| expand_line(&dict, line))
+fn expand(dict: &Dict, r: &mut impl BufRead, w: &mut impl Write) -> Result<(), TranscodeError> {
+    transcoder::transcode(r, w, |_, line| codec::expand_line(&dict, line))
 }
-
-fn process(r: &mut impl BufRead, w: &mut impl Write, mut processor: impl FnMut(&str) -> String) -> Result<(), io::Error> {
-    let mut read_buf = String::new();
-    loop {
-        match r.read_line(&mut read_buf)? {
-            0 => return Ok(()),
-            size => {
-                let output = processor(&read_buf[0..size - 1]);
-                writeln!(w, "{}", output)?;
-                read_buf.clear();
-            }
-        }
-    }
-}
-
-// fn compress_from_stdin(dict: &Dict) {
-//     process_from_stdin(|line| compress_line(&dict, line));
-// }
-//
-// fn expand_from_stdin(dict: &Dict) {
-//     process_from_stdin(|line| expand_line(&dict, line));
-// }
-//
-// fn process_from_stdin(mut processor: impl FnMut(&str) -> String) {
-//     let mut read_buf = String::new();
-//     loop {
-//         match io::stdin().read_line(&mut read_buf) {
-//             Ok(0) => return,
-//             Ok(size) => {
-//                 let output = processor(&read_buf[0..size - 1]);
-//                 println!("{}", output);
-//                 read_buf.clear();
-//             }
-//             Err(_) => process::exit(1), //TODO return error and handle outside
-//         }
-//     }
-// }

@@ -21,16 +21,18 @@ impl Dict {
     pub fn populate(&mut self, line: impl IntoIterator<Item = String>) {
         for word in line {
             let reduction = Reduction::from(&word as &str).take_if_lowercase();
-            if let Some(Reduction { fingerprint: reduced, .. }) = reduction {
-                let mapped_words = match self.entries.entry(reduced) {
-                    Entry::Occupied(entry) => entry.into_mut(),
-                    Entry::Vacant(entry) => entry.insert(vec![])
-                };
-                if mapped_words.len() == u8::MAX as usize {
-                    panic!("too many words associated with the fingerprint '{}'", word);
+            if let Some(Reduction { fingerprint, .. }) = reduction {
+                if !fingerprint.is_empty() {
+                    let mapped_words = match self.entries.entry(fingerprint) {
+                        Entry::Occupied(entry) => entry.into_mut(),
+                        Entry::Vacant(entry) => entry.insert(vec![])
+                    };
+                    if mapped_words.len() == u8::MAX as usize {
+                        panic!("too many words associated with the fingerprint '{}'", word);
+                    }
+                    mapped_words.push(word);
+                    mapped_words.sort_by(|lhs, rhs| lhs.len().cmp(&rhs.len()));
                 }
-                mapped_words.push(word);
-                mapped_words.sort_by(|lhs, rhs| lhs.len().cmp(&rhs.len()));
             }
         }
     }
@@ -39,11 +41,15 @@ impl Dict {
         self.entries.values().map(|values|values.len()).sum()
     }
 
-    //TODO currently panics if no mapping at position; should return an error instead
-    pub(crate) fn resolve(&self, key: &str, position: u8) -> Option<&String> {
-        match self.entries.get(key) {
-            None => None,
-            Some(entry) => Some(&entry[position as usize])
+    pub(crate) fn resolve(&self, fingerprint: &str, position: u8) -> Result<Option<&String>, String> {
+        match self.entries.get(fingerprint) {
+            None => Ok(None),
+            Some(entry) => {
+                match entry.get(position as usize) {
+                    None => Err(format!("no word at position {position} for fingerprint '{fingerprint}' in dictionary")),
+                    Some(word) => Ok(Some(word))
+                }
+            }
         }
     }
 
