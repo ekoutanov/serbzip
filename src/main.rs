@@ -3,15 +3,18 @@ use std::io::{BufReader, BufWriter, Write};
 use std::{env, error, process};
 use std::borrow::{Borrow, Cow};
 
-use crate::cli::{Args, ArgsError, Mode};
+use crate::cli::{Args, Mode};
 use serbzip::codecs::balkanoid::{Balkanoid, Dict};
 use serbzip::codecs::Codec;
+use crate::succinct::{CowStr, Errorlike};
 
 mod cli;
+mod succinct;
 
 fn main() {
     run().unwrap_or_else(|err| {
         eprintln!("Error: {err}");
+        process::exit(1)
     });
 }
 
@@ -24,7 +27,7 @@ fn run() -> Result<(), Box<dyn error::Error>> {
     // read the dictionary from either the user-supplied or default path
     let dict = match dict_path.extension() {
         None => {
-            Err(Box::new(ArgsError(Cow::Owned(format!("unsupported dictionary format for {dict_path:?}: only .txt and .img files can be read")))))
+            Err(Box::new(Errorlike::<CowStr>::from_owned(format!("unsupported dictionary format for {dict_path:?}: only .txt and .img files can be read"))))
         }
         Some(extension) => {
             match extension.to_string_lossy().borrow() {
@@ -36,7 +39,7 @@ fn run() -> Result<(), Box<dyn error::Error>> {
                     let mut reader = BufReader::new(File::open(dict_path)?);
                     Ok(Dict::read_from_binary_image(&mut reader)?)
                 }
-                _ =>  Err(Box::new(ArgsError(Cow::Owned(format!("unsupported dictionary format for {dict_path:?}: only .txt and .img files can be read")))))
+                _ =>  Err(Box::new(Errorlike::from_owned(format!("unsupported dictionary format for {dict_path:?}: only .txt and .img files can be read"))))
             }
         }
     }?;
@@ -44,7 +47,7 @@ fn run() -> Result<(), Box<dyn error::Error>> {
     // if the imaging option has been set, serialize dict to a user-specified file
     if let Some(image_output_file) = args.dictionary_image_output_file() {
         if !image_output_file.to_string().ends_with(".img") {
-            return Err(Box::new(ArgsError(Cow::Borrowed("only .img files are supported for compiled dictionaries"))))
+            return Err(Box::new(Errorlike::from_borrowed("only .img files are supported for compiled dictionaries")))
         }
         eprintln!(
             "Writing compiled dictionary image to {image_output_file} ({words} words)",
