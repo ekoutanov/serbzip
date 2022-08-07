@@ -1,8 +1,52 @@
 pub mod dict;
 
+pub use dict::Dict;
 use std::borrow::Cow;
-use dict::Dict;
-use crate::codec::CompressionRule::{Conflict, InDict, NoFingerprintInDict, NotInDictWithVowels};
+use crate::codecs::Codec;
+
+pub struct Balkanoid<'a> {
+    dict: &'a Dict
+}
+
+impl <'a> Balkanoid<'a> {
+    pub fn new(dict: &'a Dict) -> Self {
+        Self { dict }
+    }
+}
+
+impl Codec for Balkanoid<'_> {
+    fn compress_line(&self, line: &str) -> String {
+        let mut buf = String::new();
+        // let words = Word::parse_line(line);
+        let words = line.split_whitespace();
+        // println!("words: {words:?}");
+        for (index, word) in words.enumerate() {
+            if index > 0 {
+                buf.push(' ');
+            }
+            let compressed_word = compress_word(&self.dict, word);
+            for _ in 0..compressed_word.leading_spaces {
+                buf.push(' ');
+            }
+            buf.push_str(&compressed_word.body);
+        }
+        buf
+    }
+
+    fn expand_line(&self, line: &str) -> Result<String, String> {
+        let mut buf = String::new();
+        let words = EncodedWord::parse_line(line);
+        // println!("words: {words:?}");
+        for (index, word) in words.into_iter().enumerate() {
+            if index > 0 {
+                buf.push(' ');
+            }
+            let expanded_word = expand_word(&self.dict, word)?;
+            buf.push_str(&expanded_word);
+        }
+        Ok(buf)
+    }
+}
 
 #[derive(Debug, PartialEq)]
 struct Reduction {
@@ -61,10 +105,6 @@ fn is_vowel(ch: char) -> bool {
     }
 }
 
-trait Fragment {
-    fn append_to(&self, buf: &mut String);
-}
-
 #[derive(Debug, PartialEq)]
 struct EncodedWord {
     leading_spaces: u8,
@@ -108,15 +148,6 @@ impl EncodedWord {
     }
 }
 
-impl Fragment for EncodedWord {
-    fn append_to(&self, buf: &mut String) {
-        for _ in 0..self.leading_spaces {
-            buf.push(' ');
-        }
-        buf.push_str(&self.body);
-    }
-}
-
 #[derive(Debug, PartialEq)]
 struct SplitWord<'a> {
     prefix: Cow<'a, str>,
@@ -142,31 +173,7 @@ impl SplitWord<'_> {
                 SplitWord { prefix: Cow::Owned(prefix), suffix: Cow::Owned(suffix) }
             },
         }
-        // let (prefix, suffix): (Vec<_>, Vec<_>) = word.chars().enumerate().partition(|&(position, ch)| {
-        //     match position {
-        //         0 => ch.is_alphabetic() || ch == '\\', // allow the escape character to be the first in the string
-        //         _ => ch.is_alphabetic()                // otherwise, split on non-alphabetic characters
-        //     }
-        // });
-        // let prefix = String::from_iter(prefix.iter().map(|(_, ch)| ch));
-        // let suffix = String::from_iter(suffix.iter().map(|(_, ch)| ch));
-        // SplitWord { prefix, suffix }
     }
-}
-
-pub fn compress_line(dict: &Dict, line: &str) -> String {
-    let mut buf = String::new();
-    // let words = Word::parse_line(line);
-    let words = line.split_whitespace();
-    // println!("words: {words:?}");
-    for (index, word) in words.enumerate() {
-        if index > 0 {
-            buf.push(' ');
-        }
-        let compressed_word = compress_word(dict, word);
-        compressed_word.append_to(&mut buf);
-    }
-    buf
 }
 
 #[derive(Debug)]
@@ -186,25 +193,25 @@ fn compress_word(dict: &Dict, word: &str) -> EncodedWord {
         None => {
             if split.prefix.len() != prefix_reduction.fingerprint.len() {
                 // the input comprises one or more vowels
-                ((0, lowercase_prefix), NotInDictWithVowels)
+                ((0, lowercase_prefix), CompressionRule::NotInDictWithVowels)
             } else if !dict.contains_fingerprint(&prefix_reduction.fingerprint) {
                 // the input comprises only consonants and its fingerprint is not in the dict
-                ((0, lowercase_prefix), NoFingerprintInDict)
+                ((0, lowercase_prefix), CompressionRule::NoFingerprintInDict)
             } else {
                 // the input comprises only consonants and there are other words in the
                 // dict with a matching fingerprint
-                ((0, format!("\\{}", split.prefix)), Conflict)
+                ((0, format!("\\{}", split.prefix)), CompressionRule::Conflict)
             }
         }
         Some(position) => {
             // the dictionary contains the lower-cased input
-            ((position, prefix_reduction.fingerprint), InDict)
+            ((position, prefix_reduction.fingerprint), CompressionRule::InDict)
         }
     };
 
     // println!("rule: {rule:?}");
     match rule {
-        Conflict => EncodedWord::new(encoded_prefix.0, encoded_prefix.1 + &split.suffix),
+        CompressionRule::Conflict => EncodedWord::new(encoded_prefix.0, encoded_prefix.1 + &split.suffix),
         _ => {
             let recapitalised_prefix = restore_capitalisation(
                 encoded_prefix.1,
@@ -240,20 +247,6 @@ fn restore_capitalisation(
             }
         }
     }
-}
-
-pub fn expand_line(dict: &Dict, line: &str) -> Result<String, String> {
-    let mut buf = String::new();
-    let words = EncodedWord::parse_line(line);
-    // println!("words: {words:?}");
-    for (index, word) in words.into_iter().enumerate() {
-        if index > 0 {
-            buf.push(' ');
-        }
-        let expanded_word = expand_word(dict, word)?;
-        buf.push_str(&expanded_word);
-    }
-    Ok(buf)
 }
 
 const ESCAPE: u8 = '\\' as u8;

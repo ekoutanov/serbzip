@@ -1,11 +1,10 @@
 use rand::{RngCore};
-use serbzip::{codec, transcoder};
-use serbzip::codec::dict::Dict;
+use serbzip::codecs::balkanoid::{Balkanoid, Dict};
 use std::fs::File;
-use std::io::{BufRead, BufReader, BufWriter, Write};
+use std::io::{BufRead, BufReader, BufWriter};
 use std::path::{Path, PathBuf};
 use std::{fs};
-use serbzip::transcoder::TranscodeError;
+use serbzip::codecs::Codec;
 
 #[test]
 fn compress_and_expand_small_docs() {
@@ -32,13 +31,14 @@ fn test_compress_and_expand(dict: &Dict, original_file: &str) {
     let original_path = Path::new(original_file);
     let compressed_path = generate_random_path("sz");
     let expanded_path = generate_random_path("txt");
+    let codec = Balkanoid::new(dict);
 
     {
         // compress a given source file to a temporary .sz file
         let mut r = BufReader::new(File::open(&original_path).unwrap());
         let mut w = BufWriter::new(File::create(&compressed_path).unwrap());
         println!("compressing {original_path:?} to {compressed_path:?}");
-        compress(&dict, &mut r, &mut w).unwrap();
+        codec.compress(&mut r, &mut w).unwrap();
     }
 
     {
@@ -46,7 +46,7 @@ fn test_compress_and_expand(dict: &Dict, original_file: &str) {
         let mut r = BufReader::new(File::open(&compressed_path).unwrap());
         let mut w = BufWriter::new(File::create(&expanded_path).unwrap());
         println!("expanding {compressed_path:?} to {expanded_path:?}");
-        expand(&dict, &mut r, &mut w).unwrap();
+        codec.expand(&mut r, &mut w).unwrap();
     }
 
     {
@@ -91,15 +91,6 @@ fn test_compress_and_expand(dict: &Dict, original_file: &str) {
     }
 
     fs::remove_file(compressed_path).unwrap();
-}
-
-//TODO remove duplication
-fn compress(dict: &Dict, r: &mut impl BufRead, w: &mut impl Write) -> Result<(), TranscodeError> {
-    transcoder::transcode(r, w, |_, line| Ok(codec::compress_line(&dict, line)))
-}
-
-fn expand(dict: &Dict, r: &mut impl BufRead, w: &mut impl Write) -> Result<(), TranscodeError> {
-    transcoder::transcode(r, w, |_, line| codec::expand_line(&dict, line))
 }
 
 fn generate_random_path(extension: &str) -> PathBuf {

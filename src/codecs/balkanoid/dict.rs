@@ -4,7 +4,7 @@ use std::io;
 use std::io::{Read, Write};
 use bincode::config;
 use bincode::error::{DecodeError, EncodeError};
-use crate::codec::Reduction;
+use crate::codecs::balkanoid::Reduction;
 
 #[derive(Debug, bincode::Encode, bincode::Decode)]
 pub struct Dict {

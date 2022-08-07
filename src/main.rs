@@ -1,16 +1,14 @@
 use std::{error, io, process};
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::{Debug};
 use std::fs::File;
-use std::io::{BufRead, BufReader, BufWriter, Error, Read, Write};
+use std::io::{BufReader, BufWriter, Read, Write};
 use std::path::Path;
 
 use clap::Parser;
 use home;
-use serbzip::codec;
 
-use serbzip::codec::dict::Dict;
-use serbzip::transcoder;
-use serbzip::transcoder::{TranscodeError};
+use serbzip::codecs::balkanoid::{Balkanoid, Dict};
+use serbzip::codecs::Codec;
 
 /// A quasi-lossless Balkanoidal meta-lingual compressor
 #[derive(Parser, Debug)]
@@ -136,18 +134,11 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         Box::new(BufWriter::new(File::create(path).unwrap()))
     });
 
+    let codec = Balkanoid::new(&dict);
     if args.compress {
-        compress(&dict, &mut BufReader::new(input_reader), &mut output_writer)?;
+        codec.compress(&mut BufReader::new(input_reader), &mut output_writer)?;
     } else {
-        expand(&dict, &mut BufReader::new(input_reader), &mut output_writer)?;
+        codec.expand(&mut BufReader::new(input_reader), &mut output_writer)?;
     }
     Ok(())
-}
-
-fn compress(dict: &Dict, r: &mut impl BufRead, w: &mut impl Write) -> Result<(), TranscodeError> {
-    transcoder::transcode(r, w, |_, line| Ok(codec::compress_line(&dict, line)))
-}
-
-fn expand(dict: &Dict, r: &mut impl BufRead, w: &mut impl Write) -> Result<(), TranscodeError> {
-    transcoder::transcode(r, w, |_, line| codec::expand_line(&dict, line))
 }

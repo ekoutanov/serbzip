@@ -1,4 +1,4 @@
 extern crate core;
 
-pub mod codec;
+pub mod codecs;
 pub mod transcoder;
