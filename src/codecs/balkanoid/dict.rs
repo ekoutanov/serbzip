@@ -46,7 +46,7 @@ impl Dict {
             None => Ok(None),
             Some(entry) => {
                 match entry.get(position as usize) {
-                    None => Err(format!("no word at position {position} for fingerprint '{fingerprint}' in dictionary")),
+                    None => Err(format!("no dictionary word at position {position} for fingerprint '{fingerprint}'")),
                     Some(word) => Ok(Some(word))
                 }
             }
