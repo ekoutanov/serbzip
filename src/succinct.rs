@@ -30,7 +30,7 @@ pub trait Stringlike : AsRef<str> {
     fn into_owned(self) -> String;
 }
 
-impl Stringlike for CowStr {
+impl <'a> Stringlike for Cow<'a, str> {
     fn into_owned(self) -> String {
         self.into_owned()
     }
@@ -42,26 +42,11 @@ impl Stringlike for String {
     }
 }
 
-// impl Stringlike for String {
-//     fn to_owned(self) -> String {
-//         self
-//     }
-//
-//     fn to_borrowed(&self) -> &str {
-//         self
-//     }
-// }
-//
-// impl Stringlike for CowStr {
-//     fn to_owned(self) -> String {
-//         self.into_owned()
-//     }
-//
-//     fn to_borrowed(&self) -> &str {
-//         let g = self;
-//         CowStr::to_borrowed(g)
-//     }
-// }
+impl Stringlike for &str {
+    fn into_owned(self) -> String {
+        String::from(self)
+    }
+}
 
 #[derive(Debug)]
 pub enum IoElseErrorlike<T> {

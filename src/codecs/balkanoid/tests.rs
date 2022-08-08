@@ -2,11 +2,11 @@ use super::*;
 
 #[test]
 fn parse_line() {
-    struct Case<'a> {
-        input: &'a str,
-        expect: Vec<(u8, &'a str)>,
+    struct Case {
+        input: &'static str,
+        expect: Vec<(u8, &'static str)>,
     }
-    let cases = vec![
+    for case in vec![
         Case {
             input: "",
             expect: vec![],
@@ -39,9 +39,7 @@ fn parse_line() {
             input: " the   quick brown  fox ",
             expect: vec![(1, "the"), (2, "quick"), (0, "brown"), (1, "fox")],
         },
-    ];
-
-    for case in cases {
+    ] {
         let actual = EncodedWord::parse_line(case.input);
         let expect = case
             .expect
@@ -54,11 +52,11 @@ fn parse_line() {
 
 #[test]
 fn reduce() {
-    struct Case<'a> {
-        input: &'a str,
+    struct Case {
+        input: &'static str,
         expect: Reduction,
     }
-    let cases = vec![
+    for case in vec![
         Case {
             input: "fox",
             expect: Reduction { fingerprint: String::from("fx"), leading_capital: false, trailing_capitals: 0},
@@ -79,9 +77,7 @@ fn reduce() {
             input: " FoX",
             expect: Reduction { fingerprint: String::from(" fx"), leading_capital: false, trailing_capitals: 2},
         },
-    ];
-
-    for case in cases {
+    ] {
         let actual = Reduction::from(case.input);
         assert_eq!(case.expect, actual, "for input '{}'", case.input);
     }
@@ -89,11 +85,11 @@ fn reduce() {
 
 #[test]
 fn split_word() {
-    struct Case<'a> {
-        input: &'a str,
-        expect: (&'a str, &'a str),
+    struct Case {
+        input: &'static str,
+        expect: (&'static str, &'static str),
     }
-    let cases = vec![
+    for case in vec![
         Case {
             input: "foo",
             expect: ("foo", "")
@@ -138,9 +134,7 @@ fn split_word() {
             input: "\\яблоко!",
             expect: ("\\яблоко", "!")
         },
-    ];
-
-    for case in cases {
+    ] {
         let expected = SplitWord { prefix: Cow::Borrowed(case.expect.0), suffix: Cow::Borrowed(case.expect.1) };
         let actual = SplitWord::from(case.input);
         assert_eq!(expected, actual, "for input '{}'", case.input);
@@ -149,180 +143,169 @@ fn split_word() {
 
 #[test]
 fn compress_expand_word() {
-    struct Case<'a> {
-        dict_words: Vec<&'a str>,
-        input: &'a str,
-        expect: (u8, &'a str),
+    struct Case {
+        input_dict: Vec<&'static str>,
+        input_word: &'static str,
+        expect: (u8, &'static str),
     }
-    let cases = vec![
+    for case in vec![
         Case {
-            dict_words: vec!["count", "canet"],
-            input: "count",
+            input_dict: vec!["count", "canet"],
+            input_word: "count",
             expect: (0, "cnt")
         },
         Case {
-            dict_words: vec!["count", "canet"],
-            input: "Count",
+            input_dict: vec!["count", "canet"],
+            input_word: "Count",
             expect: (0, "Cnt")
         },
         Case {
-            dict_words: vec!["count", "canet"],
-            input: "CoUnt",
+            input_dict: vec!["count", "canet"],
+            input_word: "CoUnt",
             expect: (0, "CNT")
         },
         Case {
-            dict_words: vec!["count", "canet"],
-            input: "CounT",
+            input_dict: vec!["count", "canet"],
+            input_word: "CounT",
             expect: (0, "CNT")
         },
         Case {
-            dict_words: vec!["count", "canet"],
-            input: "canet",
+            input_dict: vec!["count", "canet"],
+            input_word: "canet",
             expect: (1, "cnt")
         },
         Case {
-            dict_words: vec!["count", "canet"],
-            input: "cont",
+            input_dict: vec!["count", "canet"],
+            input_word: "cont",
             expect: (0, "cont")
         },
         Case {
-            dict_words: vec!["count", "canet"],
-            input: "Cont",
+            input_dict: vec!["count", "canet"],
+            input_word: "Cont",
             expect: (0, "Cont")
         },
         Case {
-            dict_words: vec!["count", "canet"],
-            input: "ConT",
+            input_dict: vec!["count", "canet"],
+            input_word: "ConT",
             expect: (0, "CONT")
         },
         Case {
-            dict_words: vec!["count", "canet"],
-            input: "cnt",
+            input_dict: vec!["count", "canet"],
+            input_word: "cnt",
             expect: (0, "\\cnt")
         },
         Case {
-            dict_words: vec!["count", "canet"],
-            input: "Cnt",
+            input_dict: vec!["count", "canet"],
+            input_word: "Cnt",
             expect: (0, "\\Cnt")
         },
         Case {
-            dict_words: vec!["count", "canet"],
-            input: "CnT",
+            input_dict: vec!["count", "canet"],
+            input_word: "CnT",
             expect: (0, "\\CnT")
         },
         Case {
-            dict_words: vec!["count", "canet"],
-            input: "mark",
+            input_dict: vec!["count", "canet"],
+            input_word: "mark",
             expect: (0, "mark")
         },
         Case {
-            dict_words: vec![],
-            input: "kgb",
+            input_dict: vec![],
+            input_word: "kgb",
             expect: (0, "kgb")
         },
         Case {
-            dict_words: vec!["kagoob"],
-            input: "kgb",
+            input_dict: vec!["kagoob"],
+            input_word: "kgb",
             expect: (0, "\\kgb")
         },
         Case {
-            dict_words: vec!["kgb"],
-            input: "kgb",
+            input_dict: vec!["kgb"],
+            input_word: "kgb",
             expect: (0, "kgb")
         },
         Case {
-            dict_words: vec!["as", "is"],
-            input: "a",
+            input_dict: vec!["as", "is"],
+            input_word: "a",
             expect: (0, "a")
         },
         Case {
-            dict_words: vec!["as", "is"],
-            input: "aio",
+            input_dict: vec!["as", "is"],
+            input_word: "aio",
             expect: (0, "aio")
         },
         Case {
-            dict_words: vec!["as", "is"],
-            input: "AIO",
+            input_dict: vec!["as", "is"],
+            input_word: "AIO",
             expect: (0, "AIO")
         },
         Case {
-            dict_words: vec!["as", "is"],
-            input: "A",
+            input_dict: vec!["as", "is"],
+            input_word: "A",
             expect: (0, "A")
         },
         Case {
-            dict_words: vec!["as", "is"],
-            input: "s.",
+            input_dict: vec!["as", "is"],
+            input_word: "s.",
             expect: (0, "\\s.")
         },
         Case {
-            dict_words: vec!["as", "is"],
-            input: "S.",
+            input_dict: vec!["as", "is"],
+            input_word: "S.",
             expect: (0, "\\S.")
         },
         Case {
-            dict_words: vec!["prpr"],
-            input: "-prPr-",
+            input_dict: vec!["prpr"],
+            input_word: "-prPr-",
             expect: (0, "-prPr-")
         },
         Case {
-            dict_words: vec![""],
-            input: "\\",
+            input_dict: vec![""],
+            input_word: "\\",
             expect: (0, "\\")
         },
         Case {
-            dict_words: vec![""],
-            input: "\\\\",
+            input_dict: vec![""],
+            input_word: "\\\\",
             expect: (0, "\\\\")
         },
         Case {
-            dict_words: vec![""],
-            input: "attaché",
+            input_dict: vec![""],
+            input_word: "attaché",
             expect: (0, "attaché")
         },
         Case {
-            dict_words: vec![""],
-            input: "attaché,",
+            input_dict: vec![""],
+            input_word: "attaché,",
             expect: (0, "attaché,")
         },
         Case {
-            dict_words: vec!["яблоко"],
-            input: "яблоко",
+            input_dict: vec!["яблоко"],
+            input_word: "яблоко",
             expect: (0, "блк")
         },
         Case {
-            dict_words: vec!["яблоко"],
-            input: "Яблоко",
+            input_dict: vec!["яблоко"],
+            input_word: "Яблоко",
             expect: (0, "Блк")
         },
         Case {
-            dict_words: vec!["яблоко", "яблоки"],
-            input: "Яблоки",
+            input_dict: vec!["яблоко", "яблоки"],
+            input_word: "Яблоки",
             expect: (1, "Блк")
         },
         Case {
-            dict_words: vec![""],
-            input: "уж",
+            input_dict: vec![""],
+            input_word: "уж",
             expect: (0, "уж")
         }
-    ];
-
-    for Case { dict_words, input , expect} in cases {
-        let mut dict = Dict::default();
-        let dict_words = dict_words.into_iter().map(ToOwned::to_owned).collect::<Vec<_>>();
-        dict.populate(dict_words);
-        let expected = EncodedWord::new(expect.0, expect.1.to_owned());
-        let actual = compress_word(&dict, input);
-        assert_eq!(expected, actual, "[compression] for input' '{input}' with {dict:?}");
+    ] {
+        let dict = Dict::from(case.input_dict.clone());
+        let expected = EncodedWord::new(case.expect.0, case.expect.1.to_owned());
+        let actual = compress_word(&dict, case.input_word);
+        assert_eq!(expected, actual, "[compression] for input '{}' with dict {:?}", case.input_word, &case.input_dict);
 
         let expanded = expand_word(&dict, actual).unwrap();
-        assert_eq!(input.to_lowercase(), expanded.to_lowercase(), "[expansion] for input '{input}' with {dict:?}");
+        assert_eq!(case.input_word.to_lowercase(), expanded.to_lowercase(), "[expansion] for input '{}' with dict {:?}", case.input_word, &case.input_dict);
     }
 }
-// struct HashMapBuilder<K, V>(HashMap<K, V>);
-//
-// impl <K, V> HashMapBuilder<K, V> {
-//     fn new() -> Self { Self(HashMap::new()) }
-//
-//
-// }

@@ -85,4 +85,4 @@ impl Dict {
 }
 
 #[cfg(test)]
-mod tests;
+pub(in crate::codecs::balkanoid) mod tests;

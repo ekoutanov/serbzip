@@ -6,7 +6,7 @@ use std::io;
 use std::io::{BufWriter, Read, Write};
 use std::path::{Path, PathBuf};
 use crate::{ArgsError, AppError};
-use crate::succinct::{CowStr, Errorlike, IoElseErrorlike};
+use crate::succinct::{Errorlike};
 
 /// A quasi-lossless Balkanoidal meta-lingual compressor
 #[derive(Parser, Debug)]
@@ -42,25 +42,6 @@ pub enum Mode {
     Compress,
     Expand,
 }
-
-// #[derive(Debug)]
-// pub struct ArgsError(pub Cow<'static, str>);
-//
-// impl Display for ArgsError {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-//         f.write_str(&self.0)
-//     }
-// }
-//
-// impl Error for ArgsError {}
-
-// pub type ArgsParseError = Errorlike<CowStr>;
-
-// pub type IoElseArgsParseError = IoElseErrorlike<CowStr>;
-//
-// pub enum ArgsParseOrIoError {
-//     IoError(io::Error)
-// }
 
 impl Args {
     pub fn from<I, T>(itr: I) -> Args

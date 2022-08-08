@@ -1,6 +1,7 @@
 use super::*;
 use std::collections::HashMap;
 use std::io::{Cursor, Seek, SeekFrom};
+use crate::succinct::Stringlike;
 
 #[test]
 fn populate_incremental() {
@@ -67,24 +68,24 @@ fn populate_incremental() {
 #[test]
 fn count() {
     struct Case {
-        input: Vec<String>,
+        input: Vec<&'static str>,
         expect: usize,
     }
     for case in vec![
         Case {
-            input: stringify([""]),
+            input: vec![""],
             expect: 0,
         },
         Case {
-            input: stringify(["in"]),
+            input: vec!["in"],
             expect: 1,
         },
         Case {
-            input: stringify(["in", "on"]),
+            input: vec!["in", "on"],
             expect: 2,
         },
         Case {
-            input: stringify(["in", "on", "at"]),
+            input: vec!["in", "on", "at"],
             expect: 3,
         },
     ] {
@@ -97,32 +98,32 @@ fn count() {
 fn resolve() {
     #[derive(Debug)]
     struct Case {
-        input_dict: Vec<String>,
+        input_dict: Vec<&'static str>,
         input_fingerprint: &'static str,
         input_position: u8,
         expect: Result<Option<&'static str>, String>
     }
     for case in vec! [
         Case {
-            input_dict: stringify(["in", "on"]),
+            input_dict: vec!["in", "on"],
             input_fingerprint: "n",
             input_position: 0,
             expect: Ok(Some("in"))
         },
         Case {
-            input_dict: stringify(["in", "on"]),
+            input_dict: vec!["in", "on"],
             input_fingerprint: "n",
             input_position: 1,
             expect: Ok(Some("on"))
         },
         Case {
-            input_dict: stringify(["in", "on"]),
+            input_dict: vec!["in", "on"],
             input_fingerprint: "n",
             input_position: 2,
             expect: Err(String::from("no dictionary word at position 2 for fingerprint 'n'"))
         },
         Case {
-            input_dict: stringify(["in", "on"]),
+            input_dict: vec!["in", "on"],
             input_fingerprint: "t",
             input_position: 2,
             expect: Ok(None)
@@ -138,32 +139,32 @@ fn resolve() {
 fn position() {
     #[derive(Debug)]
     struct Case {
-        input_dict: Vec<String>,
+        input_dict: Vec<&'static str>,
         input_fingerprint: &'static str,
         input_word: &'static str,
         expect: Option<u8>
     }
     for case in vec! [
         Case {
-            input_dict: stringify(["in", "on"]),
+            input_dict: vec!["in", "on"],
             input_fingerprint: "n",
             input_word: "in",
             expect: Some(0)
         },
         Case {
-            input_dict: stringify(["in", "on"]),
+            input_dict: vec!["in", "on"],
             input_fingerprint: "n",
             input_word: "on",
             expect: Some(1)
         },
         Case {
-            input_dict: stringify(["in", "on"]),
+            input_dict: vec!["in", "on"],
             input_fingerprint: "n",
             input_word: "an",
             expect: None
         },
         Case {
-            input_dict: stringify([]),
+            input_dict: vec![],
             input_fingerprint: "n",
             input_word: "an",
             expect: None
@@ -178,18 +179,18 @@ fn position() {
 fn contains_fingerprint() {
     #[derive(Debug)]
     struct Case {
-        input_dict: Vec<String>,
+        input_dict: Vec<&'static str>,
         input_fingerprint: &'static str,
         expect: bool
     }
     for case in vec! [
         Case {
-            input_dict: stringify(["in"]),
+            input_dict: vec!["in"],
             input_fingerprint: "n",
             expect: true
         },
         Case {
-            input_dict: stringify(["in"]),
+            input_dict: vec!["in"],
             input_fingerprint: "t",
             expect: false
         }
@@ -219,20 +220,6 @@ fn populate_should_not_fill_past_fingerprint_limit() {
         .collect::<Vec<_>>();
     dict.populate(words);
 }
-//
-// #[test]
-// fn write_and_read_binary_image() {
-//     let mut dict = Dict::default();
-//     dict.populate(stringify(["in", "on", "at"]));
-//     let mut out = StringWrite(String::new());
-//     dict.write_to_binary_image(&mut out).unwrap();
-//
-//     let mut cursor = Cursor::new(out.0.as_bytes());
-//     let materialised_dict = Dict::read_from_binary_image(&mut cursor).unwrap();
-//
-//     assert_eq!(dict.entries, materialised_dict.entries);
-// }
-
 
 #[test]
 fn write_and_read_binary_image() {
@@ -259,33 +246,10 @@ fn read_from_text_file() {
     assert_eq!(Dict::from(stringify(["in", "on", "at", "the", "is", "of", "off"])).entries, loaded.entries);
 }
 
-// struct StringWrite(String);
-//
-// impl Write for StringWrite {
-//     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-//         self.0.push_str(String::from_utf8_lossy(buf).as_ref());
-//         Ok(buf.len())
-//     }
-//
-//     fn flush(&mut self) -> io::Result<()> {
-//         Ok(())
-//     }
-// }
-
-// struct StringRead(String, usize);
-//
-// impl Read for StringRead {
-//     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-//         let bytes = self.0.as_bytes();
-//         buf.copy_from_slice()
-//         todo!()
-//     }
-// }
-
 impl Dict {
-    fn from(line: impl IntoIterator<Item = String>) -> Dict {
+    pub fn from(line: impl IntoIterator<Item = impl Stringlike>) -> Dict {
         let mut dict = Dict::default();
-        dict.populate(line);
+        dict.populate(line.into_iter().map(Stringlike::into_owned));
         dict
     }
 }
