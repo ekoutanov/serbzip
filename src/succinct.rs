@@ -23,6 +23,17 @@ impl<T: Display + Debug> Display for Errorlike<T> {
 
 impl<T: Display + Debug> Error for Errorlike<T> {}
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct NoError;
+
+impl Display for NoError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(self, f)
+    }
+}
+
+impl Error for NoError {}
+
 pub type CowStr = Cow<'static, str>;
 
 pub trait Stringlike : AsRef<str> {

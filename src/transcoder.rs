@@ -1,4 +1,5 @@
 use std::{error, io};
+use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use std::io::{BufRead, Write};
 use crate::succinct::{CowStr, Errorlike};
@@ -6,30 +7,55 @@ use crate::succinct::{CowStr, Errorlike};
 pub type LineProcessingError = Errorlike<CowStr>;
 
 #[derive(Debug)]
-pub enum TranscodeError {
-    ProcessingError { line_no: u32, error: LineProcessingError },
+pub enum TranscodeError<L> {
+    ConversionError { line_no: u32, error: L },
     IoError(io::Error)
 }
 
-impl Display for TranscodeError {
+impl <L> TranscodeError<L> {
+    pub fn into_conversion_error(self) -> Option<(u32, L)> {
+        match self {
+            TranscodeError::ConversionError { line_no, error } => Some((line_no, error)),
+            TranscodeError::IoError(_) => None,
+        }
+    }
+
+    pub fn into_io_error(self) -> Option<io::Error> {
+        match self {
+            TranscodeError::ConversionError { .. } => None,
+            TranscodeError::IoError(error) => Some(error)
+        }
+    }
+}
+
+impl <'a, L: Error + 'a> TranscodeError<L> {
+    pub fn boxify(self) -> TranscodeError<Box<dyn Error + 'a>> {
+        match self {
+            TranscodeError::ConversionError { line_no, error } => TranscodeError::ConversionError { line_no, error: Box::new(error) },
+            TranscodeError::IoError(error) => TranscodeError::IoError(error)
+        }
+    }
+}
+
+impl <L: Display + Debug> Display for TranscodeError<L> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         Debug::fmt(self, f)
     }
 }
 
-impl error::Error for TranscodeError {}
+impl <L: Display + Debug> error::Error for TranscodeError<L> {}
 
-impl From<io::Error> for TranscodeError {
+impl <L> From<io::Error> for TranscodeError<L> {
     fn from(error: io::Error) -> Self {
         TranscodeError::IoError(error)
     }
 }
 
-pub fn transcode(
+pub fn transcode<L>(
     r: &mut impl BufRead,
     w: &mut impl Write,
-    mut processor: impl FnMut(u32, &str) -> Result<String, LineProcessingError>,
-) -> Result<(), TranscodeError> {
+    mut processor: impl FnMut(u32, &str) -> Result<String, L>,
+) -> Result<(), TranscodeError<L>> {
     let mut read_buf = String::new();
     let mut line_no = 1u32;
     loop {
@@ -42,7 +68,7 @@ pub fn transcode(
                         read_buf.clear();
                     }
                     Err(error) => {
-                        return Err(TranscodeError::ProcessingError { line_no, error })
+                        return Err(TranscodeError::ConversionError { line_no, error })
                     }
                 }
             }
@@ -50,3 +76,6 @@ pub fn transcode(
         line_no += 1;
     }
 }
+
+#[cfg(test)]
+mod tests;

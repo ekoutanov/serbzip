@@ -325,7 +325,7 @@ fn compress_expand_word() {
 fn expand_word_cannot_resolve() {
     let dict = Dict::from(vec!["in", "on", "as", "is"]);
     let result = expand_word(&dict, EncodedWord { leading_spaces: 2, body: String::from("n") });
-    assert_eq!(Err(ExpandError::from_borrowed("no dictionary word at position 2 for fingerprint 'n'")), result);
+    assert_eq!(Err(WordResolveError::from_borrowed("no dictionary word at position 2 for fingerprint 'n'")), result);
 }
 
 #[test]
@@ -367,5 +367,5 @@ fn compress_expand_line() {
 fn expand_line_cannot_resolve() {
     let dict = Dict::from(vec!["in", "on", "as", "is"]);
     let result = Balkanoid::new(&dict).expand_line("  n");
-    assert_eq!(Err(ExpandError::from_borrowed("no dictionary word at position 2 for fingerprint 'n'")), result);
+    assert_eq!(Err(WordResolveError::from_borrowed("no dictionary word at position 2 for fingerprint 'n'")), result);
 }

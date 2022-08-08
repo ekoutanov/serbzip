@@ -23,7 +23,7 @@ pub enum AppError {
     EncodeError(EncodeError),
     DecodeError(DecodeError),
     ArgsError(ArgsError),
-    TranscodeError(TranscodeError)
+    TranscodeError(TranscodeError<Box<dyn Error>>)
 }
 
 impl From<io::Error> for AppError {
@@ -50,9 +50,15 @@ impl From<DecodeError> for AppError {
     }
 }
 
-impl From<TranscodeError> for AppError {
-    fn from(error: TranscodeError) -> Self {
-        Self::TranscodeError(error)
+// impl From<TranscodeError<Box<dyn Error>>> for AppError {
+//     fn from(error: TranscodeError<Box<dyn Error>>) -> Self {
+//         Self::TranscodeError(error)
+//     }
+// }
+
+impl <L: Error + 'static> From<TranscodeError<L>> for AppError {
+    fn from(error: TranscodeError<L>) -> Self {
+        Self::TranscodeError(error.boxify())
     }
 }
 
@@ -126,6 +132,7 @@ fn run() -> Result<(), AppError> {
     match mode {
         Mode::Compress => codec.compress(&mut BufReader::new(input_reader), &mut output_writer)?,
         Mode::Expand => codec.expand(&mut BufReader::new(input_reader), &mut output_writer)?,
+        // Mode::Expand => codec.expand(&mut BufReader::new(input_reader), &mut output_writer).map_err(TranscodeError::boxify)?,
     }
     output_writer.flush()?;
     Ok(())

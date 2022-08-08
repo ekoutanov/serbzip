@@ -1,4 +1,5 @@
-use crate::codecs::{Codec, ExpandError};
+use std::convert::Infallible;
+use crate::codecs::{Codec};
 use std::ops::Add;
 
 pub struct Armenoid;
@@ -10,6 +11,8 @@ impl Default for Armenoid {
 }
 
 impl Codec for Armenoid {
+    type ExpandError = Infallible;
+
     fn compress_line(&self, line: &str) -> String {
         line.split_whitespace()
             .enumerate()
@@ -17,7 +20,7 @@ impl Codec for Armenoid {
             .fold(String::new(), String::add)
     }
 
-    fn expand_line(&self, line: &str) -> Result<String, ExpandError> {
+    fn expand_line(&self, line: &str) -> Result<String, Self::ExpandError> {
         Ok(line
             .split_whitespace()
             .enumerate()

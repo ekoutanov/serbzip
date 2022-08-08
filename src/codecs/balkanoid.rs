@@ -2,7 +2,8 @@ pub mod dict;
 
 pub use dict::Dict;
 use std::borrow::Cow;
-use crate::codecs::{Codec, ExpandError};
+use crate::codecs::{Codec};
+use crate::codecs::balkanoid::dict::WordResolveError;
 
 pub struct Balkanoid<'a> {
     dict: &'a Dict
@@ -15,6 +16,8 @@ impl <'a> Balkanoid<'a> {
 }
 
 impl Codec for Balkanoid<'_> {
+    type ExpandError = WordResolveError;
+
     fn compress_line(&self, line: &str) -> String {
         let mut buf = String::new();
         // let words = Word::parse_line(line);
@@ -33,7 +36,7 @@ impl Codec for Balkanoid<'_> {
         buf
     }
 
-    fn expand_line(&self, line: &str) -> Result<String, ExpandError> {
+    fn expand_line(&self, line: &str) -> Result<String, Self::ExpandError> {
         let mut buf = String::new();
         let words = EncodedWord::parse_line(line);
         // println!("words: {words:?}");
@@ -251,7 +254,7 @@ fn restore_capitalisation(
 
 const ESCAPE: u8 = '\\' as u8;
 
-fn expand_word(dict: &Dict, word: EncodedWord) -> Result<String, ExpandError> {
+fn expand_word(dict: &Dict, word: EncodedWord) -> Result<String, WordResolveError> {
     let split = SplitWord::from(&word.body);
     if split.prefix.is_empty() {
         return Ok(word.body)
