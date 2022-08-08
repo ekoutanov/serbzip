@@ -101,7 +101,7 @@ fn resolve() {
         input_dict: Vec<&'static str>,
         input_fingerprint: &'static str,
         input_position: u8,
-        expect: Result<Option<&'static str>, String>
+        expect: Result<Option<&'static str>, WordResolveError>
     }
     for case in vec! [
         Case {
@@ -120,7 +120,7 @@ fn resolve() {
             input_dict: vec!["in", "on"],
             input_fingerprint: "n",
             input_position: 2,
-            expect: Err(String::from("no dictionary word at position 2 for fingerprint 'n'"))
+            expect: Err(WordResolveError::from_borrowed("no dictionary word at position 2 for fingerprint 'n'"))
         },
         Case {
             input_dict: vec!["in", "on"],

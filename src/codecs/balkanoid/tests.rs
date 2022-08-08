@@ -84,6 +84,17 @@ fn reduce() {
 }
 
 #[test]
+fn reduction_take_if_lowercase() {
+    assert_eq!(Reduction::from("test").take_if_lowercase(), Some(Reduction {
+        fingerprint: String::from("tst"),
+        leading_capital: false,
+        trailing_capitals: 0
+    }));
+
+    assert_eq!(Reduction::from("tesT").take_if_lowercase(), None);
+}
+
+#[test]
 fn split_word() {
     struct Case {
         input: &'static str,
@@ -308,4 +319,53 @@ fn compress_expand_word() {
         let expanded = expand_word(&dict, actual).unwrap();
         assert_eq!(case.input_word.to_lowercase(), expanded.to_lowercase(), "[expansion] for input '{}' with dict {:?}", case.input_word, &case.input_dict);
     }
+}
+
+#[test]
+fn expand_word_cannot_resolve() {
+    let dict = Dict::from(vec!["in", "on", "as", "is"]);
+    let result = expand_word(&dict, EncodedWord { leading_spaces: 2, body: String::from("n") });
+    assert_eq!(Err(ExpandError::from_borrowed("no dictionary word at position 2 for fingerprint 'n'")), result);
+}
+
+#[test]
+fn compress_expand_line() {
+    #[derive(Debug)]
+    struct Case {
+        input_dict: Vec<&'static str>,
+        input_line: &'static str,
+        expect: &'static str
+    }
+    for case in vec![
+        Case {
+            input_dict: vec!["in", "on", "as", "is"],
+            input_line: "he came in, as one",
+            expect: "he came n, s one"
+        },
+        Case {
+            input_dict: vec!["in", "on", "one", "way"],
+            input_line: "he came in, as one, and went on his way!",
+            expect: "he came n, as   n, and went  n his wy!"
+        },
+        Case {
+            input_dict: vec!["in", "on", "as", "is"],
+            input_line: "He came In, As One",
+            expect: "He came N, S One"
+        },
+    ] {
+        let dict = Dict::from(case.input_dict.clone());
+        let codec = Balkanoid::new(&dict);
+        let actual = codec.compress_line(case.input_line);
+        assert_eq!(case.expect, actual, "[compression] for {case:?}");
+
+        let expanded = codec.expand_line(&actual).unwrap();
+        assert_eq!(case.input_line.to_lowercase(), expanded.to_lowercase(), "[expansion] for {case:?}")
+    }
+}
+
+#[test]
+fn expand_line_cannot_resolve() {
+    let dict = Dict::from(vec!["in", "on", "as", "is"]);
+    let result = Balkanoid::new(&dict).expand_line("  n");
+    assert_eq!(Err(ExpandError::from_borrowed("no dictionary word at position 2 for fingerprint 'n'")), result);
 }

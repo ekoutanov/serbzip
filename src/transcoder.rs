@@ -1,10 +1,13 @@
 use std::{error, io};
 use std::fmt::{Debug, Display, Formatter};
 use std::io::{BufRead, Write};
+use crate::succinct::{CowStr, Errorlike};
+
+pub type LineProcessingError = Errorlike<CowStr>;
 
 #[derive(Debug)]
 pub enum TranscodeError {
-    ProcessingError { line_no: u32, error: String },
+    ProcessingError { line_no: u32, error: LineProcessingError },
     IoError(io::Error)
 }
 
@@ -25,7 +28,7 @@ impl From<io::Error> for TranscodeError {
 pub fn transcode(
     r: &mut impl BufRead,
     w: &mut impl Write,
-    mut processor: impl FnMut(u32, &str) -> Result<String, String>,
+    mut processor: impl FnMut(u32, &str) -> Result<String, LineProcessingError>,
 ) -> Result<(), TranscodeError> {
     let mut read_buf = String::new();
     let mut line_no = 1u32;

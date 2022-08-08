@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
-use std::io;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Errorlike<T>(pub T);
@@ -48,31 +47,5 @@ impl Stringlike for &str {
     }
 }
 
-#[derive(Debug)]
-pub enum IoElseErrorlike<T> {
-    IoError(io::Error),
-    Errorlike(T)
-}
-
-impl <T> From<io::Error> for IoElseErrorlike<T> {
-    fn from(error: io::Error) -> Self {
-        Self::IoError(error)
-    }
-}
-
-impl <T> From<Errorlike<T>> for IoElseErrorlike<T> {
-    fn from(error: Errorlike<T>) -> Self {
-        Self::Errorlike(error.0)
-    }
-}
-
-impl<T: Display> Display for IoElseErrorlike<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            IoElseErrorlike::IoError(error) => Debug::fmt(error, f),
-            IoElseErrorlike::Errorlike(error) => Display::fmt(error, f)
-        }
-    }
-}
-
-impl <T: Debug + Display> Error for IoElseErrorlike<T> {}
+#[cfg(test)]
+mod tests;

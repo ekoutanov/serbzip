@@ -5,6 +5,7 @@ use std::io::{Read, Write};
 use bincode::config;
 use bincode::error::{DecodeError, EncodeError};
 use crate::codecs::balkanoid::Reduction;
+use crate::succinct::{CowStr, Errorlike};
 
 #[derive(Debug, bincode::Encode, bincode::Decode)]
 pub struct Dict {
@@ -16,6 +17,8 @@ impl Default for Dict {
         Self { entries: HashMap::new() }
     }
 }
+
+pub type WordResolveError = Errorlike<CowStr>;
 
 impl Dict {
     pub fn populate(&mut self, line: impl IntoIterator<Item = String>) {
@@ -41,12 +44,12 @@ impl Dict {
         self.entries.values().map(|values|values.len()).sum()
     }
 
-    pub(crate) fn resolve(&self, fingerprint: &str, position: u8) -> Result<Option<&String>, String> {
+    pub(crate) fn resolve(&self, fingerprint: &str, position: u8) -> Result<Option<&String>, WordResolveError> {
         match self.entries.get(fingerprint) {
             None => Ok(None),
             Some(entry) => {
                 match entry.get(position as usize) {
-                    None => Err(format!("no dictionary word at position {position} for fingerprint '{fingerprint}'")),
+                    None => Err(Errorlike::from_owned(format!("no dictionary word at position {position} for fingerprint '{fingerprint}'"))),
                     Some(word) => Ok(Some(word))
                 }
             }
