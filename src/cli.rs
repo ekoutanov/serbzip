@@ -1,13 +1,12 @@
 use clap::Parser;
-use std::borrow::Cow;
-use std::error::Error;
 use std::ffi::OsString;
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::{Debug};
 use std::fs::File;
 use std::io;
 use std::io::{BufWriter, Read, Write};
 use std::path::{Path, PathBuf};
-use crate::succinct::{CowStr, Errorlike};
+use crate::{ArgsError, AppError};
+use crate::succinct::{CowStr, Errorlike, IoElseErrorlike};
 
 /// A quasi-lossless Balkanoidal meta-lingual compressor
 #[derive(Parser, Debug)]
@@ -55,6 +54,14 @@ pub enum Mode {
 //
 // impl Error for ArgsError {}
 
+// pub type ArgsParseError = Errorlike<CowStr>;
+
+// pub type IoElseArgsParseError = IoElseErrorlike<CowStr>;
+//
+// pub enum ArgsParseOrIoError {
+//     IoError(io::Error)
+// }
+
 impl Args {
     pub fn from<I, T>(itr: I) -> Args
     where
@@ -64,7 +71,7 @@ impl Args {
         Args::parse_from(itr)
     }
 
-    pub fn mode(&self) -> Result<Mode, Errorlike<CowStr>> {
+    pub fn mode(&self) -> Result<Mode, ArgsError> {
         match (self.compress, self.expand) {
             (true, true) | (false, false) => Err(Errorlike::from_borrowed(
                 "either one of --compress or --expand must be specified",
@@ -74,13 +81,13 @@ impl Args {
         }
     }
 
-    pub fn input_reader(&self) -> Result<Box<dyn Read>, Box<dyn Error>> {
+    pub fn input_reader(&self) -> Result<Box<dyn Read>, AppError> {
         self.input_file
             .as_ref()
             .map_or(Ok(Box::new(io::stdin())), |path| {
                 let path = Path::new(&path);
                 if !path.exists() {
-                    Err(Box::new(Errorlike::<CowStr>::from_owned(format!(
+                    Err(AppError::from(ArgsError::from_owned(format!(
                         "failed to open input file {path:?}"
                     ))))
                 } else {
@@ -97,7 +104,7 @@ impl Args {
             })
     }
 
-    pub fn dict_path(&self) -> Result<PathBuf, Box<dyn Error>> {
+    pub fn dict_path(&self) -> Result<PathBuf, AppError> {
         match &self.dictionary {
             None => {
                 let local_img_path = Path::new("dict.img");
@@ -111,15 +118,14 @@ impl Args {
                         // resolved to ${HOME} (in *nix-based systems) or %USERPROFILE% in Windows
                         match home::home_dir() {
                             None => {
-                                Err(Box::new(Errorlike::from_borrowed("the user's home directory could not be located; please specify the dictionary file")))
+                                Err(AppError::from(ArgsError::from_borrowed("the user's home directory could not be located; please specify the dictionary file")))
                             }
                             Some(path) => {
                                 let home_img_path = path.as_path().join(Path::new("/.serbzip/dict.img"));
                                 if home_img_path.exists() {
                                     Ok(home_img_path.to_owned())
                                 } else {
-                                    let g = Cow::Borrowed("no dict.img in ~/.serbzip; please specify the dictionary file");
-                                    Err(Box::new(Errorlike::from_borrowed("no dict.img in ~/.serbzip; please specify the dictionary file")))
+                                    Err(AppError::from(ArgsError::from_borrowed("no dict.img in ~/.serbzip; please specify the dictionary file")))
                                 }
                             }
                         }
@@ -131,7 +137,7 @@ impl Args {
                 if specified_path.exists() {
                     Ok(specified_path.to_owned())
                 } else {
-                    Err(Box::new(Errorlike::<CowStr>::from_owned(format!(
+                    Err(AppError::from(ArgsError::from_owned(format!(
                         "failed to open dictionary file {specified_path:?}"
                     ))))
                 }
