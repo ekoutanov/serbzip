@@ -2,13 +2,25 @@
 name = "serbzip"
 version = "0.1.0"
 edition = "2021"
+authors = ["Emil Koutanov"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 bincode = "2.0.0-rc.1"
-clap = { version = "3.2.16", features = ["derive"] }
-home = "0.5.3"
+
+# optional dependencies for the binary crate
+clap = { version = "3.2.16", features = ["derive"], optional = true }
+home = { version = "0.5.3", optional = true }
+reqwest = { version = "0.11", features = ["blocking"], optional = true }
+
 
 [dev-dependencies]
 rand = "0.8.5"
+
+[features]
+build-binary = ["clap", "home", "reqwest"]
+
+[[bin]]
+name = "serbzip"
+required-features = ["build-binary"]

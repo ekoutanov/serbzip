@@ -1,17 +1,25 @@
-use std::error::Error;
-use clap::Parser;
-use std::ffi::OsString;
-use std::fmt::{Debug, Display, Formatter};
-use std::fs::File;
-use std::{env, io};
-use std::borrow::Borrow;
-use std::io::{BufReader, BufWriter, Read, Write};
-use std::path::{Path, PathBuf};
 use bincode::error::{DecodeError, EncodeError};
+use clap::Parser;
 use serbzip::codecs::balkanoid::{Balkanoid, Dict};
 use serbzip::codecs::Codec;
-use serbzip::succinct::CowStr;
+use serbzip::succinct::{CowStr, Errorlike};
 use serbzip::transcoder::TranscodeError;
+use std::borrow::Borrow;
+use std::error::Error;
+use std::ffi::OsString;
+use std::fmt::{Debug, Display, Formatter};
+use std::fs::{create_dir_all, File};
+use std::io::{BufReader, BufWriter, Read, Write};
+use std::path::{Path, PathBuf};
+use std::str::FromStr;
+use std::{env, io};
+use banner::{BLUE, RED, WHITE, YELLOW};
+use serbzip::codecs::armenoid::Armenoid;
+
+pub mod banner;
+
+const HOME_DICT_FILE: &str = ".serbzip/dict.img";
+const DICT_URL: &str = "https://github.com/ekoutanov/serbzip/raw/master/dict.img";
 
 #[derive(Debug)]
 pub enum CliErrorKind {
@@ -20,7 +28,6 @@ pub enum CliErrorKind {
     InvalidMode,
     NoSuchInputFile,
     NoHomeDir,
-    NoDefaultDict,
     NoSuchDictFile,
 }
 
@@ -38,6 +45,7 @@ impl Display for CliError {
 #[derive(Debug)]
 pub enum AppError {
     IoError(io::Error),
+    DictDownloadError(Box<dyn Error>),
     EncodeError(EncodeError),
     DecodeError(DecodeError),
     CliError(CliError),
@@ -74,52 +82,113 @@ impl<L: Error + 'static> From<TranscodeError<L>> for AppError {
     }
 }
 
+impl From<DownloadAndSaveError> for AppError {
+    fn from(error: DownloadAndSaveError) -> Self {
+        match error {
+            DownloadAndSaveError::IoError(error) => Self::IoError(error),
+            DownloadAndSaveError::HttpError(error) => Self::DictDownloadError(Box::new(error)),
+        }
+    }
+}
+
 impl Display for AppError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            AppError::IoError(error) => Debug::fmt(error, f),
+            AppError::IoError(error) => write!(f, "[I/O error] {error}"),
             AppError::CliError(error) => Display::fmt(error, f),
-            AppError::EncodeError(error) => Display::fmt(error, f),
-            AppError::DecodeError(error) => Display::fmt(error, f),
-            AppError::TranscodeError(error) => Display::fmt(error, f),
+            AppError::EncodeError(error) => write!(f, "[encode error] {error}"),
+            AppError::DecodeError(error) => write!(f, "[decode error] {error}"),
+            AppError::TranscodeError(error) => write!(f, "[transcode error] {error}"),
+            AppError::DictDownloadError(error) => write!(f, "[dict. download error] {error}"),
         }
     }
 }
 
 impl Error for AppError {}
 
+enum DownloadAndSaveError {
+    IoError(io::Error),
+    HttpError(reqwest::Error)
+}
+
+impl From<io::Error> for DownloadAndSaveError {
+    fn from(error: io::Error) -> Self {
+        Self::IoError(error)
+    }
+}
+
+impl From<reqwest::Error> for DownloadAndSaveError {
+    fn from(error: reqwest::Error) -> Self {
+        Self::HttpError(error)
+    }
+}
+
+fn create_parent_dirs(path: &impl AsRef<Path>) -> Result<(), io::Error> {
+    let path = path.as_ref();
+    create_dir_all(path.parent().unwrap())?;
+    Ok(())
+}
+
+fn download_and_safe_file(url: &str, path: impl AsRef<Path>) -> Result<(), DownloadAndSaveError> {
+    let resp = reqwest::blocking::get(url)?;
+    let body = resp.bytes()?;
+    let mut body_bytes = &body[..];
+    create_parent_dirs(&path)?;
+    let mut out = File::create(path)?;
+    io::copy(&mut body_bytes, &mut out)?;
+    Ok(())
+}
+
 pub fn run() -> Result<(), AppError> {
     let args = Args::from(&mut env::args_os());
-    //eprintln!("args: {args:?}");
+    match args.codec.clone().unwrap_or(CodecImpl::Balkanoid) {
+        CodecImpl::Balkanoid => run_balkanoid(args),
+        CodecImpl::Armenoid => run_armenoid(args),
+    }
+}
 
-    let dict_path = args.dict_path()?;
+fn run_balkanoid(args: Args) -> Result<(), AppError> {
+    banner::print(r#"
+
+██████╗  █████╗ ██╗     ██╗  ██╗ █████╗ ███╗   ██╗ ██████╗ ██╗██████╗
+██╔══██╗██╔══██╗██║     ██║ ██╔╝██╔══██╗████╗  ██║██╔═══██╗██║██╔══██╗
+██████╔╝███████║██║     █████╔╝ ███████║██╔██╗ ██║██║   ██║██║██║  ██║
+██╔══██╗██╔══██║██║     ██╔═██╗ ██╔══██║██║╚██╗██║██║   ██║██║██║  ██║
+██████╔╝██║  ██║███████╗██║  ██╗██║  ██║██║ ╚████║╚██████╔╝██║██████╔╝
+╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝╚═════╝
+
+    "#, &[RED, RED, BLUE, BLUE, WHITE, WHITE]);
 
     // read the dictionary from either the user-supplied or default path
-    let dict = match dict_path.extension() {
-        None => {
-            Err(AppError::from(CliError(CliErrorKind::UnsupportedDictionaryFormat, CliErrorDetail::Owned(format!("unsupported dictionary format for {dict_path:?}: only .txt and .img files can be read")))))
-        }
-        Some(extension) => {
-            match extension.to_ascii_lowercase().to_string_lossy().borrow() {
-                "txt" => {
-                    let mut reader = BufReader::new(File::open(dict_path)?);
-                    Ok(Dict::read_from_text_file(&mut reader)?)
-                }
-                "img" => {
-                    let mut reader = BufReader::new(File::open(dict_path)?);
-                    Ok(Dict::read_from_binary_image(&mut reader)?)
-                }
-                _ =>  Err(AppError::from(CliError(CliErrorKind::UnsupportedDictionaryFormat, CliErrorDetail::Owned(format!("unsupported dictionary format for {dict_path:?}: only .txt and .img files can be read")))))
+    let dict = {
+        let dict_path = args.dict_path()?;
+        match args.dict_path()?.extension() {
+            None => {
+                Err(AppError::from(CliError(CliErrorKind::UnsupportedDictionaryFormat, CliErrorDetail::Owned(format!("unsupported dictionary format for {dict_path:?}: only .txt and .img files can be read")))))
             }
-        }
-    }?;
+            Some(extension) => {
+                match extension.to_ascii_lowercase().to_string_lossy().borrow() {
+                    "txt" => {
+                        let mut reader = BufReader::new(File::open(dict_path)?);
+                        Ok(Dict::read_from_text_file(&mut reader)?)
+                    }
+                    "img" => {
+                        let mut reader = BufReader::new(File::open(dict_path)?);
+                        Ok(Dict::read_from_binary_image(&mut reader)?)
+                    }
+                    _ =>  Err(AppError::from(CliError(CliErrorKind::UnsupportedDictionaryFormat, CliErrorDetail::Owned(format!("unsupported dictionary format for {dict_path:?}: only .txt and .img files can be read")))))
+                }
+            }
+        }?
+    };
 
     // if the imaging option has been set, serialize dict to a user-specified file
     if let Some(image_output_file) = args.dictionary_image_output_file() {
         if !is_extension(image_output_file, "img") {
-            return Err(AppError::from(CliError(CliErrorKind::UnsupportedBinaryDictionaryFormat, CliErrorDetail::Borrowed(
-                "only .img files are supported for compiled dictionaries",
-            ))));
+            return Err(AppError::from(CliError(
+                CliErrorKind::UnsupportedBinaryDictionaryFormat,
+                CliErrorDetail::Borrowed("only .img files are supported for compiled dictionaries"),
+            )));
         }
         eprintln!(
             "Writing compiled dictionary image to {image_output_file} ({words} words)",
@@ -134,7 +203,6 @@ pub fn run() -> Result<(), AppError> {
     let mode = args.mode()?;
     let input_reader = args.input_reader()?;
     let mut output_writer: Box<dyn Write> = args.output_writer()?;
-
     let codec = Balkanoid::new(&dict);
     match mode {
         Mode::Compress => codec.compress(&mut BufReader::new(input_reader), &mut output_writer)?,
@@ -144,7 +212,49 @@ pub fn run() -> Result<(), AppError> {
     Ok(())
 }
 
-/// A quasi-lossless Balkanoidal meta-lingual compressor
+fn run_armenoid(args: Args) -> Result<(), AppError> {
+    banner::print(r#"
+
+ █████╗ ██████╗ ███╗   ███╗███████╗███╗   ██╗ ██████╗ ██╗██████╗
+██╔══██╗██╔══██╗████╗ ████║██╔════╝████╗  ██║██╔═══██╗██║██╔══██╗
+███████║██████╔╝██╔████╔██║█████╗  ██╔██╗ ██║██║   ██║██║██║  ██║
+██╔══██║██╔══██╗██║╚██╔╝██║██╔══╝  ██║╚██╗██║██║   ██║██║██║  ██║
+██║  ██║██║  ██║██║ ╚═╝ ██║███████╗██║ ╚████║╚██████╔╝██║██████╔╝
+╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝╚═════╝
+
+    "#, &[RED, RED, BLUE, BLUE, YELLOW, YELLOW]);
+
+    let mode = args.mode()?;
+    let input_reader = args.input_reader()?;
+    let mut output_writer: Box<dyn Write> = args.output_writer()?;
+    let codec = Armenoid::default();
+    match mode {
+        Mode::Compress => codec.compress(&mut BufReader::new(input_reader), &mut output_writer)?,
+        Mode::Expand => codec.expand(&mut BufReader::new(input_reader), &mut output_writer)?,
+    }
+    output_writer.flush()?;
+    Ok(())
+}
+
+#[derive(Debug, Clone)]
+enum CodecImpl {
+    Balkanoid,
+    Armenoid,
+}
+
+impl FromStr for CodecImpl {
+    type Err = Errorlike<CowStr>;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "balkanoid" => Ok(Self::Balkanoid),
+            "armenoid" => Ok(Self::Armenoid),
+            other => Err(Errorlike::from_owned(format!("no such codec '{other}'"))),
+        }
+    }
+}
+
+/// A quasi-lossless Balkanoidal meta-lingual compressor.
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
@@ -171,6 +281,10 @@ struct Args {
     /// Output file for compiling the dictionary image
     #[clap(short = 'm', long, value_parser)]
     dictionary_image_output_file: Option<String>,
+
+    /// Codec implementation (defaults to balkanoid)
+    #[clap(long, value_parser)]
+    codec: Option<CodecImpl>,
 }
 
 #[derive(Debug)]
@@ -190,9 +304,10 @@ impl Args {
 
     fn mode(&self) -> Result<Mode, CliError> {
         match (self.compress, self.expand) {
-            (true, true) | (false, false) => Err(CliError(CliErrorKind::InvalidMode, CliErrorDetail::Borrowed(
-                "either one of --compress or --expand must be specified",
-            ))),
+            (true, true) | (false, false) => Err(CliError(
+                CliErrorKind::InvalidMode,
+                CliErrorDetail::Borrowed("either one of --compress or --expand must be specified"),
+            )),
             (true, false) => Ok(Mode::Compress),
             (false, true) => Ok(Mode::Expand),
         }
@@ -206,9 +321,10 @@ impl Args {
                 if path.exists() {
                     Ok(Box::new(File::open(path)?))
                 } else {
-                    Err(AppError::from(CliError(CliErrorKind::NoSuchInputFile, CliErrorDetail::Owned(format!(
-                        "failed to open input file {path:?}"
-                    )))))
+                    Err(AppError::from(CliError(
+                        CliErrorKind::NoSuchInputFile,
+                        CliErrorDetail::Owned(format!("failed to open input file {path:?}")),
+                    )))
                 }
             })
     }
@@ -238,11 +354,13 @@ impl Args {
                                 Err(AppError::from(CliError(CliErrorKind::NoHomeDir, CliErrorDetail::Borrowed("the user's home directory could not be located; please specify the dictionary file"))))
                             }
                             Some(path) => {
-                                let home_img_path = path.as_path().join(Path::new("/.serbzip/dict.img"));
+                                let home_img_path = path.join(Path::new(HOME_DICT_FILE));
                                 if home_img_path.exists() {
                                     Ok(home_img_path)
                                 } else {
-                                    Err(AppError::from(CliError(CliErrorKind::NoDefaultDict, CliErrorDetail::Borrowed("no dict.img in ~/.serbzip; please specify the dictionary file"))))
+                                    eprintln!("Downloading dictionary file to {home_img_path:?}");
+                                    download_and_safe_file(DICT_URL, home_img_path.clone())?;
+                                    Ok(home_img_path)
                                 }
                             }
                         }
@@ -254,9 +372,12 @@ impl Args {
                 if specified_path.exists() {
                     Ok(specified_path.to_owned())
                 } else {
-                    Err(AppError::from(CliError(CliErrorKind::NoSuchDictFile, CliErrorDetail::Owned(format!(
-                        "failed to open dictionary file {specified_path:?}"
-                    )))))
+                    Err(AppError::from(CliError(
+                        CliErrorKind::NoSuchDictFile,
+                        CliErrorDetail::Owned(format!(
+                            "failed to open dictionary file {specified_path:?}"
+                        )),
+                    )))
                 }
             }
         }
@@ -267,8 +388,9 @@ impl Args {
     }
 }
 
-fn is_extension<P>(filename: P, ext: &str) -> bool where P: Into<PathBuf> {
-    let filename = filename.into();
-    filename.extension()
+fn is_extension(filename: impl AsRef<Path>, ext: &str) -> bool {
+    let filename = filename.as_ref();
+    filename
+        .extension()
         .map_or(false, |file_ext| file_ext.eq_ignore_ascii_case(ext))
 }
