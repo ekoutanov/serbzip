@@ -1,12 +1,12 @@
+use crate::succinct::Errorlike;
+use crate::{AppError, ArgsError};
 use clap::Parser;
 use std::ffi::OsString;
-use std::fmt::{Debug};
+use std::fmt::Debug;
 use std::fs::File;
 use std::io;
 use std::io::{BufWriter, Read, Write};
 use std::path::{Path, PathBuf};
-use crate::{ArgsError, AppError};
-use crate::succinct::{Errorlike};
 
 /// A quasi-lossless Balkanoidal meta-lingual compressor
 #[derive(Parser, Debug)]
@@ -67,12 +67,12 @@ impl Args {
             .as_ref()
             .map_or(Ok(Box::new(io::stdin())), |path| {
                 let path = Path::new(&path);
-                if !path.exists() {
+                if path.exists() {
+                    Ok(Box::new(File::open(path)?))
+                } else {
                     Err(AppError::from(ArgsError::from_owned(format!(
                         "failed to open input file {path:?}"
                     ))))
-                } else {
-                    Ok(Box::new(File::open(path)?))
                 }
             })
     }
@@ -104,7 +104,7 @@ impl Args {
                             Some(path) => {
                                 let home_img_path = path.as_path().join(Path::new("/.serbzip/dict.img"));
                                 if home_img_path.exists() {
-                                    Ok(home_img_path.to_owned())
+                                    Ok(home_img_path)
                                 } else {
                                     Err(AppError::from(ArgsError::from_borrowed("no dict.img in ~/.serbzip; please specify the dictionary file")))
                                 }

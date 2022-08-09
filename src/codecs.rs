@@ -1,6 +1,6 @@
-use std::convert::Infallible;
 use crate::transcoder;
 use crate::transcoder::TranscodeError;
+use std::convert::Infallible;
 use std::error::Error;
 use std::io;
 use std::io::BufRead;

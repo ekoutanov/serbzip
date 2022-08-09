@@ -4,7 +4,6 @@ use std::convert::Infallible;
 use std::error::Error;
 use std::io;
 use std::io::{Cursor, ErrorKind};
-use crate::transcoder::TranscodeError::IoError;
 
 #[test]
 fn transcode_error_conversion() {
@@ -42,7 +41,8 @@ fn transcode_error_into_dynamic_for_conversion_error() {
 
 #[test]
 fn transcode_error_into_dynamic_for_io_error() {
-    let error = TranscodeError::<Errorlike<String>>::IoError(io::Error::new(ErrorKind::AddrInUse, "test"));
+    let error =
+        TranscodeError::<Errorlike<String>>::IoError(io::Error::new(ErrorKind::AddrInUse, "test"));
     let boxed = error.into_dynamic();
     assert_eq!(ErrorKind::AddrInUse, boxed.into_io_error().unwrap().kind());
 }
@@ -54,7 +54,10 @@ fn transcode_error_implements_debug() {
         error: Errorlike("test"),
     };
     let formatted = format!("{error:?}");
-    assert_eq!("ConversionError { line_no: 10, error: Errorlike(\"test\") }", formatted);
+    assert_eq!(
+        "ConversionError { line_no: 10, error: Errorlike(\"test\") }",
+        formatted
+    );
 }
 
 #[test]
@@ -69,9 +72,13 @@ fn transcode_error_implements_display_for_conversion_error() {
 
 #[test]
 fn transcode_error_implements_display_for_io_error() {
-    let error = TranscodeError::<String>::IoError(io::Error::new(ErrorKind::AddrInUse, "address in use"));
+    let error =
+        TranscodeError::<String>::IoError(io::Error::new(ErrorKind::AddrInUse, "address in use"));
     let formatted = format!("{error}");
-    assert_eq!("I/O error: Custom { kind: AddrInUse, error: \"address in use\" }", formatted);
+    assert_eq!(
+        "I/O error: Custom { kind: AddrInUse, error: \"address in use\" }",
+        formatted
+    );
 }
 
 #[test]
@@ -102,7 +109,7 @@ fn transcode_with_processor_error() {
     let processor = |line_no: u32, line: &str| -> Result<String, &str> {
         match line_no {
             1 => Ok(format!("{line_no}-{line}")),
-            _ => Err("could not process")
+            _ => Err("could not process"),
         }
     };
     let content = concat!("first\n", "second\n", "third\n");
@@ -110,7 +117,13 @@ fn transcode_with_processor_error() {
     let mut w = Cursor::new(Vec::<u8>::new());
     let result = transcode(&mut r, &mut w, processor);
     assert!(result.is_err());
-    assert!(matches!(result, Err(TranscodeError::ConversionError { line_no: 2, error: "could not process" })));
+    assert!(matches!(
+        result,
+        Err(TranscodeError::ConversionError {
+            line_no: 2,
+            error: "could not process"
+        })
+    ));
 }
 
 #[test]
@@ -120,7 +133,7 @@ fn transcode_with_io_error() {
     };
     let content = concat!("first\n", "second\n", "third\n");
     let mut r = Cursor::new(content.as_bytes());
-    let mut w = Cursor::new([0;0]); // zero-size buffer will inhibit writes
+    let mut w = Cursor::new([0; 0]); // zero-size buffer will inhibit writes
     let result = transcode(&mut r, &mut w, processor);
     assert!(result.is_err());
     let io_error = result.err().unwrap().into_io_error().unwrap();

@@ -1,7 +1,7 @@
 use super::*;
+use crate::succinct::Stringlike;
 use std::collections::HashMap;
 use std::io::{Cursor, Seek, SeekFrom};
-use crate::succinct::Stringlike;
 
 #[test]
 fn populate_incremental() {
@@ -101,36 +101,40 @@ fn resolve() {
         input_dict: Vec<&'static str>,
         input_fingerprint: &'static str,
         input_position: u8,
-        expect: Result<Option<&'static str>, WordResolveError>
+        expect: Result<Option<&'static str>, WordResolveError>,
     }
-    for case in vec! [
+    for case in vec![
         Case {
             input_dict: vec!["in", "on"],
             input_fingerprint: "n",
             input_position: 0,
-            expect: Ok(Some("in"))
+            expect: Ok(Some("in")),
         },
         Case {
             input_dict: vec!["in", "on"],
             input_fingerprint: "n",
             input_position: 1,
-            expect: Ok(Some("on"))
+            expect: Ok(Some("on")),
         },
         Case {
             input_dict: vec!["in", "on"],
             input_fingerprint: "n",
             input_position: 2,
-            expect: Err(WordResolveError::from_borrowed("no dictionary word at position 2 for fingerprint 'n'"))
+            expect: Err(WordResolveError::from_borrowed(
+                "no dictionary word at position 2 for fingerprint 'n'",
+            )),
         },
         Case {
             input_dict: vec!["in", "on"],
             input_fingerprint: "t",
             input_position: 2,
-            expect: Ok(None)
-        }
+            expect: Ok(None),
+        },
     ] {
         let dict = Dict::from(case.input_dict.clone());
-        let actual = dict.resolve(case.input_fingerprint, case.input_position).map(|option_of_string_ref| option_of_string_ref.map(String::as_str));
+        let actual = dict
+            .resolve(case.input_fingerprint, case.input_position)
+            .map(|option_of_string_ref| option_of_string_ref.map(String::as_str));
         assert_eq!(case.expect, actual, "for {case:?}");
     }
 }
@@ -142,36 +146,41 @@ fn position() {
         input_dict: Vec<&'static str>,
         input_fingerprint: &'static str,
         input_word: &'static str,
-        expect: Option<u8>
+        expect: Option<u8>,
     }
-    for case in vec! [
+    for case in vec![
         Case {
             input_dict: vec!["in", "on"],
             input_fingerprint: "n",
             input_word: "in",
-            expect: Some(0)
+            expect: Some(0),
         },
         Case {
             input_dict: vec!["in", "on"],
             input_fingerprint: "n",
             input_word: "on",
-            expect: Some(1)
+            expect: Some(1),
         },
         Case {
             input_dict: vec!["in", "on"],
             input_fingerprint: "n",
             input_word: "an",
-            expect: None
+            expect: None,
         },
         Case {
             input_dict: vec![],
             input_fingerprint: "n",
             input_word: "an",
-            expect: None
-        }
+            expect: None,
+        },
     ] {
         let dict = Dict::from(case.input_dict.clone());
-        assert_eq!(case.expect, dict.position(case.input_fingerprint, case.input_word), "for {:?}", case)
+        assert_eq!(
+            case.expect,
+            dict.position(case.input_fingerprint, case.input_word),
+            "for {:?}",
+            case
+        )
     }
 }
 
@@ -181,22 +190,27 @@ fn contains_fingerprint() {
     struct Case {
         input_dict: Vec<&'static str>,
         input_fingerprint: &'static str,
-        expect: bool
+        expect: bool,
     }
-    for case in vec! [
+    for case in vec![
         Case {
             input_dict: vec!["in"],
             input_fingerprint: "n",
-            expect: true
+            expect: true,
         },
         Case {
             input_dict: vec!["in"],
             input_fingerprint: "t",
-            expect: false
-        }
+            expect: false,
+        },
     ] {
         let dict = Dict::from(case.input_dict.clone());
-        assert_eq!(case.expect, dict.contains_fingerprint(case.input_fingerprint), "for {:?}", case);
+        assert_eq!(
+            case.expect,
+            dict.contains_fingerprint(case.input_fingerprint),
+            "for {:?}",
+            case
+        );
     }
 }
 
@@ -243,7 +257,10 @@ fn read_from_text_file() {
       off"#;
     let mut cursor = Cursor::new(text.as_bytes());
     let loaded = Dict::read_from_text_file(&mut cursor).unwrap();
-    assert_eq!(Dict::from(stringify(["in", "on", "at", "the", "is", "of", "off"])).entries, loaded.entries);
+    assert_eq!(
+        Dict::from(stringify(["in", "on", "at", "the", "is", "of", "off"])).entries,
+        loaded.entries
+    );
 }
 
 impl Dict {

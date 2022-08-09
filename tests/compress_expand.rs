@@ -1,10 +1,10 @@
-use rand::{RngCore};
+use rand::RngCore;
 use serbzip::codecs::balkanoid::{Balkanoid, Dict};
+use serbzip::codecs::Codec;
+use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter};
 use std::path::{Path, PathBuf};
-use std::{fs};
-use serbzip::codecs::Codec;
 
 #[test]
 fn compress_and_expand_small_docs() {
@@ -60,7 +60,7 @@ fn test_compress_and_expand(dict: &Dict, original_file: &str) {
             let tgt_bytes = tgt.read_line(&mut tgt_buf).unwrap();
 
             if src_bytes == 0 && tgt_bytes == 0 {
-                break
+                break;
             }
 
             let (src_line, tgt_line) = (&src_buf[0..src_bytes - 1], &tgt_buf[0..tgt_bytes - 1]);
@@ -72,12 +72,22 @@ fn test_compress_and_expand(dict: &Dict, original_file: &str) {
             loop {
                 let (src_word, tgt_word) = (src_words.next(), tgt_words.next());
                 if src_word == None && tgt_word == None {
-                    break
+                    break;
                 }
-                assert!(!matches!(src_word, None), "[{original_file}] missing source word {word_no} at line {line_no}");
-                assert!(!matches!(tgt_word, None), "[{original_file}] missing target word {word_no} at line {line_no}");
+                assert!(
+                    !matches!(src_word, None),
+                    "[{original_file}] missing source word {word_no} at line {line_no}"
+                );
+                assert!(
+                    !matches!(tgt_word, None),
+                    "[{original_file}] missing target word {word_no} at line {line_no}"
+                );
                 let (src_word, tgt_word) = (src_word.unwrap(), tgt_word.unwrap());
-                assert_eq!(src_word.to_lowercase(), tgt_word.to_lowercase(), "[{original_file}] word mismatch at line {line_no}, word {word_no}");
+                assert_eq!(
+                    src_word.to_lowercase(),
+                    tgt_word.to_lowercase(),
+                    "[{original_file}] word mismatch at line {line_no}, word {word_no}"
+                );
                 if src_word != tgt_word {
                     // The algorithm doesn't guarantee that the capitalisation will match -- print differences for debugging.
                     // Note: this is not a failure.

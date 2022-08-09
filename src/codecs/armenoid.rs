@@ -1,5 +1,5 @@
+use crate::codecs::Codec;
 use std::convert::Infallible;
-use crate::codecs::{Codec};
 use std::ops::Add;
 
 pub struct Armenoid;

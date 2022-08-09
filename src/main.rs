@@ -1,16 +1,17 @@
+use bincode::error::{DecodeError, EncodeError};
+use std::borrow::Borrow;
+use std::error::Error;
+use std::fmt::{Debug, Display, Formatter};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write};
 use std::{env, io, process};
-use std::borrow::{Borrow};
-use std::error::Error;
-use std::fmt::{Debug, Display, Formatter};
-use bincode::error::{DecodeError, EncodeError};
+use std::path::{PathBuf};
 
 use crate::cli::{Args, Mode};
+use crate::succinct::{CowStr, Errorlike};
 use serbzip::codecs::balkanoid::{Balkanoid, Dict};
 use serbzip::codecs::Codec;
 use serbzip::transcoder::TranscodeError;
-use crate::succinct::{CowStr, Errorlike};
 
 mod cli;
 mod succinct;
@@ -23,7 +24,7 @@ pub enum AppError {
     EncodeError(EncodeError),
     DecodeError(DecodeError),
     ArgsError(ArgsError),
-    TranscodeError(TranscodeError<Box<dyn Error>>)
+    TranscodeError(TranscodeError<Box<dyn Error>>),
 }
 
 impl From<io::Error> for AppError {
@@ -50,13 +51,7 @@ impl From<DecodeError> for AppError {
     }
 }
 
-// impl From<TranscodeError<Box<dyn Error>>> for AppError {
-//     fn from(error: TranscodeError<Box<dyn Error>>) -> Self {
-//         Self::TranscodeError(error)
-//     }
-// }
-
-impl <L: Error + 'static> From<TranscodeError<L>> for AppError {
+impl<L: Error + 'static> From<TranscodeError<L>> for AppError {
     fn from(error: TranscodeError<L>) -> Self {
         Self::TranscodeError(error.into_dynamic())
     }
@@ -69,7 +64,7 @@ impl Display for AppError {
             AppError::ArgsError(error) => Display::fmt(error, f),
             AppError::EncodeError(error) => Display::fmt(error, f),
             AppError::DecodeError(error) => Display::fmt(error, f),
-            AppError::TranscodeError(error) => Display::fmt(error, f)
+            AppError::TranscodeError(error) => Display::fmt(error, f),
         }
     }
 }
@@ -95,7 +90,7 @@ fn run() -> Result<(), AppError> {
             Err(AppError::from(ArgsError::from_owned(format!("unsupported dictionary format for {dict_path:?}: only .txt and .img files can be read"))))
         }
         Some(extension) => {
-            match extension.to_string_lossy().borrow() {
+            match extension.to_ascii_lowercase().to_string_lossy().borrow() {
                 "txt" => {
                     let mut reader = BufReader::new(File::open(dict_path)?);
                     Ok(Dict::read_from_text_file(&mut reader)?)
@@ -111,8 +106,10 @@ fn run() -> Result<(), AppError> {
 
     // if the imaging option has been set, serialize dict to a user-specified file
     if let Some(image_output_file) = args.dictionary_image_output_file() {
-        if !image_output_file.to_string().ends_with(".img") {
-            return Err(AppError::from(ArgsError::from_borrowed("only .img files are supported for compiled dictionaries")))
+        if !is_extension(image_output_file, "img") {
+            return Err(AppError::from(ArgsError::from_borrowed(
+                "only .img files are supported for compiled dictionaries",
+            )));
         }
         eprintln!(
             "Writing compiled dictionary image to {image_output_file} ({words} words)",
@@ -121,7 +118,7 @@ fn run() -> Result<(), AppError> {
         let mut writer = BufWriter::new(File::create(image_output_file)?);
         dict.write_to_binary_image(&mut writer)?;
         writer.flush()?;
-        return Ok(())
+        return Ok(());
     }
 
     let mode = args.mode()?;
@@ -136,4 +133,10 @@ fn run() -> Result<(), AppError> {
     }
     output_writer.flush()?;
     Ok(())
+}
+
+fn is_extension<P>(filename: P, ext: &str) -> bool where P: Into<PathBuf> {
+    let filename = filename.into();
+    filename.extension()
+        .map_or(false, |file_ext| file_ext.eq_ignore_ascii_case(ext))
 }

@@ -1,21 +1,15 @@
+use crate::codecs::balkanoid::Reduction;
+use crate::succinct::{CowStr, Errorlike};
+use bincode::config;
+use bincode::error::{DecodeError, EncodeError};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::io;
 use std::io::{Read, Write};
-use bincode::config;
-use bincode::error::{DecodeError, EncodeError};
-use crate::codecs::balkanoid::Reduction;
-use crate::succinct::{CowStr, Errorlike};
 
-#[derive(Debug, bincode::Encode, bincode::Decode)]
+#[derive(Default, Debug, bincode::Encode, bincode::Decode)]
 pub struct Dict {
-    entries: HashMap<String, Vec<String>>
-}
-
-impl Default for Dict {
-    fn default() -> Self {
-        Self { entries: HashMap::new() }
-    }
+    entries: HashMap<String, Vec<String>>,
 }
 
 pub type WordResolveError = Errorlike<CowStr>;
@@ -28,7 +22,7 @@ impl Dict {
                 if !fingerprint.is_empty() {
                     let mapped_words = match self.entries.entry(fingerprint) {
                         Entry::Occupied(entry) => entry.into_mut(),
-                        Entry::Vacant(entry) => entry.insert(vec![])
+                        Entry::Vacant(entry) => entry.insert(vec![]),
                     };
                     if mapped_words.len() == u8::MAX as usize {
                         panic!("too many words associated with the fingerprint '{}'", word);
@@ -40,26 +34,34 @@ impl Dict {
         }
     }
 
+    #[allow(clippy::must_use_candidate)]
     pub fn count(&self) -> usize {
-        self.entries.values().map(|values|values.len()).sum()
+        self.entries.values().map(Vec::len).sum()
     }
 
-    pub(crate) fn resolve(&self, fingerprint: &str, position: u8) -> Result<Option<&String>, WordResolveError> {
+    pub(crate) fn resolve(
+        &self,
+        fingerprint: &str,
+        position: u8,
+    ) -> Result<Option<&String>, WordResolveError> {
         match self.entries.get(fingerprint) {
             None => Ok(None),
-            Some(entry) => {
-                match entry.get(position as usize) {
-                    None => Err(Errorlike::from_owned(format!("no dictionary word at position {position} for fingerprint '{fingerprint}'"))),
-                    Some(word) => Ok(Some(word))
-                }
-            }
+            Some(entry) => match entry.get(position as usize) {
+                None => Err(Errorlike::from_owned(format!(
+                    "no dictionary word at position {position} for fingerprint '{fingerprint}'"
+                ))),
+                Some(word) => Ok(Some(word)),
+            },
         }
     }
 
     pub(crate) fn position(&self, fingerprint: &str, word: &str) -> Option<u8> {
         match self.entries.get(fingerprint) {
             None => None,
-            Some(entry) => entry.iter().position(|existing| existing == word).map(|pos| pos as u8)
+            Some(entry) => entry
+                .iter()
+                .position(|existing| existing == word)
+                .map(|pos| pos as u8),  // pos is guaranteed to be less than 2^8
         }
     }
 

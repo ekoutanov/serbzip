@@ -1,8 +1,8 @@
 use std::any::TypeId;
-use std::borrow::{Cow};
+use std::borrow::Cow;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
-use std::ops::{Deref};
+use std::ops::Deref;
 
 use crate::succinct::{CowStr, Errorlike, Stringlike};
 
@@ -47,10 +47,16 @@ fn errorlike_implements_display() {
 fn errorlike_implements_error() {
     let errorlike = Errorlike::<CowStr>::from_borrowed("test");
     let box_of_errorlike = Box::new(errorlike);
-    assert_eq!(TypeId::of::<Errorlike<Cow<'static, str>>>(), core::any::Any::type_id(box_of_errorlike.deref()));
+    assert_eq!(
+        TypeId::of::<Errorlike<Cow<'static, str>>>(),
+        core::any::Any::type_id(box_of_errorlike.deref())
+    );
 
     let box_of_error: Box<dyn Error> = box_of_errorlike;
-    assert_eq!(TypeId::of::<dyn Error>(), core::any::Any::type_id(box_of_error.deref()));
+    assert_eq!(
+        TypeId::of::<dyn Error>(),
+        core::any::Any::type_id(box_of_error.deref())
+    );
 }
 
 #[test]

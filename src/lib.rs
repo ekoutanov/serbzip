@@ -1,3 +1,3 @@
 pub mod codecs;
-pub mod transcoder;
 pub mod succinct;
+pub mod transcoder;
