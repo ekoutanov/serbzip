@@ -131,7 +131,7 @@ fn resolve() {
     ] {
         let dict = Dict::from(case.input_dict.clone());
         let actual = dict.resolve(case.input_fingerprint, case.input_position).map(|option_of_string_ref| option_of_string_ref.map(String::as_str));
-        assert_eq!(case.expect, actual, "for {:?}", case);
+        assert_eq!(case.expect, actual, "for {case:?}");
     }
 }
 

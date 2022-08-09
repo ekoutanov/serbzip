@@ -28,10 +28,10 @@ impl <L> TranscodeError<L> {
     }
 }
 
-impl <'a, L: Error + 'a> TranscodeError<L> {
-    pub fn boxify(self) -> TranscodeError<Box<dyn Error + 'a>> {
+impl <L: Into<Box<dyn Error>>> TranscodeError<L> {
+    pub fn into_dynamic(self) -> TranscodeError<Box<dyn Error>> {
         match self {
-            TranscodeError::ConversionError { line_no, error } => TranscodeError::ConversionError { line_no, error: Box::new(error) },
+            TranscodeError::ConversionError { line_no, error } => TranscodeError::ConversionError { line_no, error: error.into() },
             TranscodeError::IoError(error) => TranscodeError::IoError(error)
         }
     }
@@ -39,7 +39,10 @@ impl <'a, L: Error + 'a> TranscodeError<L> {
 
 impl <L: Display + Debug> Display for TranscodeError<L> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        Debug::fmt(self, f)
+        match self {
+            TranscodeError::ConversionError { line_no, error } => write!(f, "conversion error on line {line_no}: {error}"),
+            TranscodeError::IoError(error) => write!(f, "I/O error: {error:?}")
+        }
     }
 }
 

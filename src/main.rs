@@ -58,7 +58,7 @@ impl From<DecodeError> for AppError {
 
 impl <L: Error + 'static> From<TranscodeError<L>> for AppError {
     fn from(error: TranscodeError<L>) -> Self {
-        Self::TranscodeError(error.boxify())
+        Self::TranscodeError(error.into_dynamic())
     }
 }
 

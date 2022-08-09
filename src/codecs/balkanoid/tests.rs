@@ -369,3 +369,9 @@ fn expand_line_cannot_resolve() {
     let result = Balkanoid::new(&dict).expand_line("  n");
     assert_eq!(Err(WordResolveError::from_borrowed("no dictionary word at position 2 for fingerprint 'n'")), result);
 }
+
+#[test]
+fn compression_rule_implements_debug() {
+    let formatted = format!("{:?}", CompressionRule::Conflict);
+    assert_eq!("Conflict", formatted);
+}
