@@ -1,5 +1,4 @@
-use crate::succinct::Errorlike;
-use crate::{AppError, ArgsError};
+use crate::{AppError, CliError, CliErrorDetail, CliErrorKind};
 use clap::Parser;
 use std::ffi::OsString;
 use std::fmt::Debug;
@@ -52,11 +51,11 @@ impl Args {
         Args::parse_from(itr)
     }
 
-    pub fn mode(&self) -> Result<Mode, ArgsError> {
+    pub fn mode(&self) -> Result<Mode, CliError> {
         match (self.compress, self.expand) {
-            (true, true) | (false, false) => Err(Errorlike::from_borrowed(
+            (true, true) | (false, false) => Err(CliError(CliErrorKind::InvalidMode, CliErrorDetail::from_borrowed(
                 "either one of --compress or --expand must be specified",
-            )),
+            ))),
             (true, false) => Ok(Mode::Compress),
             (false, true) => Ok(Mode::Expand),
         }
@@ -70,9 +69,9 @@ impl Args {
                 if path.exists() {
                     Ok(Box::new(File::open(path)?))
                 } else {
-                    Err(AppError::from(ArgsError::from_owned(format!(
+                    Err(AppError::from(CliError(CliErrorKind::NoSuchInputFile, CliErrorDetail::from_owned(format!(
                         "failed to open input file {path:?}"
-                    ))))
+                    )))))
                 }
             })
     }
@@ -99,14 +98,14 @@ impl Args {
                         // resolved to ${HOME} (in *nix-based systems) or %USERPROFILE% in Windows
                         match home::home_dir() {
                             None => {
-                                Err(AppError::from(ArgsError::from_borrowed("the user's home directory could not be located; please specify the dictionary file")))
+                                Err(AppError::from(CliError(CliErrorKind::NoHomeDir, CliErrorDetail::from_borrowed("the user's home directory could not be located; please specify the dictionary file"))))
                             }
                             Some(path) => {
                                 let home_img_path = path.as_path().join(Path::new("/.serbzip/dict.img"));
                                 if home_img_path.exists() {
                                     Ok(home_img_path)
                                 } else {
-                                    Err(AppError::from(ArgsError::from_borrowed("no dict.img in ~/.serbzip; please specify the dictionary file")))
+                                    Err(AppError::from(CliError(CliErrorKind::NoDefaultDict, CliErrorDetail::from_borrowed("no dict.img in ~/.serbzip; please specify the dictionary file"))))
                                 }
                             }
                         }
@@ -118,9 +117,9 @@ impl Args {
                 if specified_path.exists() {
                     Ok(specified_path.to_owned())
                 } else {
-                    Err(AppError::from(ArgsError::from_owned(format!(
+                    Err(AppError::from(CliError(CliErrorKind::NoSuchDictFile, CliErrorDetail::from_owned(format!(
                         "failed to open dictionary file {specified_path:?}"
-                    ))))
+                    )))))
                 }
             }
         }
