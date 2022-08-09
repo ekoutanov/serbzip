@@ -1,18 +1,23 @@
+use crate::cli::app_error::{AppError, CliError, CliErrorDetail, CliErrorKind};
+use crate::cli::banner::{BLUE, RED, WHITE};
+use crate::cli::{banner, downloader, is_extension, Args, Mode};
+use serbzip::codecs::balkanoid::{Balkanoid, Dict};
+use serbzip::codecs::Codec;
 use std::borrow::Borrow;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
-use serbzip::codecs::balkanoid::{Balkanoid, Dict};
-use serbzip::codecs::Codec;
-use crate::cli::app_error::{AppError, CliError, CliErrorDetail, CliErrorKind};
-use crate::cli::{Args, banner, downloader, is_extension, Mode};
-use crate::cli::banner::{BLUE, RED, WHITE};
 
-const HOME_DICT_FILE: &str = ".serbzip/dict.img";
+const DICT_EXT_BINARY: &str = "blk";
+const DICT_EXT_TEXT: &str = "txt";
+const HOME_DICT_FILE: &str = ".serbzip/dict.blk";
+const DEFAULT_DICT_BINARY_FILE: &str = "dict.blk";
+const DEFAULT_DICT_TEXT_FILE: &str = "dict.txt";
 const DICT_URL: &str = "https://github.com/ekoutanov/serbzip/raw/master/dict.img";
 
-pub (in super) fn run(args: Args) -> Result<(), AppError> {
-    banner::print(r#"
+pub(super) fn run(args: &Args) -> Result<(), AppError> {
+    banner::print(
+        r#"
 
 ██████╗  █████╗ ██╗     ██╗  ██╗ █████╗ ███╗   ██╗ ██████╗ ██╗██████╗
 ██╔══██╗██╔══██╗██║     ██║ ██╔╝██╔══██╗████╗  ██║██╔═══██╗██║██╔══██╗
@@ -21,37 +26,40 @@ pub (in super) fn run(args: Args) -> Result<(), AppError> {
 ██████╔╝██║  ██║███████╗██║  ██╗██║  ██║██║ ╚████║╚██████╔╝██║██████╔╝
 ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝╚═════╝
 
-    "#, &[RED, RED, BLUE, BLUE, WHITE, WHITE]);
+    "#,
+        &[RED, RED, BLUE, BLUE, WHITE, WHITE],
+    );
 
     // read the dictionary from either the user-supplied or default path
     let dict = {
         let dict_path = args.dict_path()?;
+        let unsupported_format_err = || {
+            AppError::from(CliError(CliErrorKind::UnsupportedDictionaryFormat, CliErrorDetail::Owned(format!("unsupported dictionary format for {dict_path:?}: only .{DICT_EXT_TEXT} and .{DICT_EXT_BINARY} files can be read"))))
+        };
         match args.dict_path()?.extension() {
-            None => {
-                Err(AppError::from(CliError(CliErrorKind::UnsupportedDictionaryFormat, CliErrorDetail::Owned(format!("unsupported dictionary format for {dict_path:?}: only .txt and .img files can be read")))))
-            }
-            Some(extension) => {
-                match extension.to_ascii_lowercase().to_string_lossy().borrow() {
-                    "txt" => {
-                        let mut reader = BufReader::new(File::open(dict_path)?);
-                        Ok(Dict::read_from_text_file(&mut reader)?)
-                    }
-                    "img" => {
-                        let mut reader = BufReader::new(File::open(dict_path)?);
-                        Ok(Dict::read_from_binary_image(&mut reader)?)
-                    }
-                    _ =>  Err(AppError::from(CliError(CliErrorKind::UnsupportedDictionaryFormat, CliErrorDetail::Owned(format!("unsupported dictionary format for {dict_path:?}: only .txt and .img files can be read")))))
+            None => Err(unsupported_format_err()),
+            Some(extension) => match extension.to_ascii_lowercase().to_string_lossy().borrow() {
+                DICT_EXT_TEXT => {
+                    let mut reader = BufReader::new(File::open(dict_path)?);
+                    Ok(Dict::read_from_text_file(&mut reader)?)
                 }
-            }
+                DICT_EXT_BINARY => {
+                    let mut reader = BufReader::new(File::open(dict_path)?);
+                    Ok(Dict::read_from_binary_image(&mut reader)?)
+                }
+                _ => Err(unsupported_format_err()),
+            },
         }?
     };
 
     // if the imaging option has been set, serialize dict to a user-specified file
     if let Some(image_output_file) = args.dictionary_image_output_file() {
-        if !is_extension(image_output_file, "img") {
+        if !is_extension(image_output_file, DICT_EXT_BINARY) {
             return Err(AppError::from(CliError(
                 CliErrorKind::UnsupportedBinaryDictionaryFormat,
-                CliErrorDetail::Borrowed("only .img files are supported for compiled dictionaries"),
+                CliErrorDetail::Borrowed(
+                    "only .{DICT_EXT_BINARY} files are supported for compiled dictionaries",
+                ),
             )));
         }
         eprintln!(
@@ -80,11 +88,11 @@ impl Args {
     fn dict_path(&self) -> Result<PathBuf, AppError> {
         match &self.dictionary {
             None => {
-                let local_img_path = Path::new("dict.img");
+                let local_img_path = Path::new(DEFAULT_DICT_BINARY_FILE);
                 if local_img_path.exists() {
                     Ok(local_img_path.to_owned())
                 } else {
-                    let local_txt_path = Path::new("dict.txt");
+                    let local_txt_path = Path::new(DEFAULT_DICT_TEXT_FILE);
                     if local_txt_path.exists() {
                         Ok(local_txt_path.to_owned())
                     } else {

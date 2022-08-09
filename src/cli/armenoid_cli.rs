@@ -5,7 +5,7 @@ use crate::cli::app_error::AppError;
 use crate::cli::{Args, banner, Mode};
 use crate::cli::banner::{BLUE, RED, YELLOW};
 
-pub(in super) fn run(args: Args) -> Result<(), AppError> {
+pub(in super) fn run(args: &Args) -> Result<(), AppError> {
     banner::print(r#"
 
  █████╗ ██████╗ ███╗   ███╗███████╗███╗   ██╗ ██████╗ ██╗██████╗

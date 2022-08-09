@@ -18,8 +18,8 @@ mod armenoid_cli;
 pub fn run() -> Result<(), AppError> {
     let args = Args::from(&mut env::args_os());
     match args.codec.clone().unwrap_or(CodecImpl::Balkanoid) {
-        CodecImpl::Balkanoid => balkanoid_cli::run(args),
-        CodecImpl::Armenoid => armenoid_cli::run(args),
+        CodecImpl::Balkanoid => balkanoid_cli::run(&args),
+        CodecImpl::Armenoid => armenoid_cli::run(&args),
     }
 }
 

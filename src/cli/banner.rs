@@ -13,8 +13,8 @@ pub fn colour_256(code: u8) -> String {
 }
 
 pub fn print(logo: &str, colours: &[&str]) {
-    let mut colours = colours.into_iter();
-    for line in logo.split("\n") {
+    let mut colours = colours.iter();
+    for line in logo.split('\n') {
         if !line.trim().is_empty() {
             let foreground = colours.next().unwrap();
             eprintln!("{foreground}{line}{reset}", reset = RESET);
