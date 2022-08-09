@@ -13,17 +13,17 @@ repository = "https://github.com/ekoutanov/serbzip"
 bincode = "2.0.0-rc.1"
 
 # optional dependencies for the binary crate
-clap = { version = "3.2.16", features = ["derive"], optional = true }
-home = { version = "0.5.3", optional = true }
-reqwest = { version = "0.11", features = ["blocking"], optional = true }
+clap = { version = "3.2.16", features = ["derive"], optional = false }
+home = { version = "0.5.3", optional = false }
+reqwest = { version = "0.11", features = ["blocking"], optional = false }
 
 
 [dev-dependencies]
 rand = "0.8.5"
 
-[features]
-binary = ["dep:clap", "dep:home", "dep:reqwest"]
-
-[[bin]]
-name = "serbzip"
-required-features = ["binary"]
+#[features]
+#binary = ["dep:clap", "dep:home", "dep:reqwest"]
+#
+#[[bin]]
+#name = "serbzip"
+#required-features = ["binary"]
