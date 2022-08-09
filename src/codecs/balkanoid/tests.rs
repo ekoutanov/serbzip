@@ -189,27 +189,27 @@ fn compress_expand_word() {
         Case {
             input_dict: vec!["count", "canet"],
             input_word: "count",
-            expect: (0, "cnt"),
+            expect: (1, "cnt"),
         },
         Case {
             input_dict: vec!["count", "canet"],
             input_word: "Count",
-            expect: (0, "Cnt"),
+            expect: (1, "Cnt"),
         },
         Case {
             input_dict: vec!["count", "canet"],
             input_word: "CoUnt",
-            expect: (0, "CNT"),
+            expect: (1, "CNT"),
         },
         Case {
             input_dict: vec!["count", "canet"],
             input_word: "CounT",
-            expect: (0, "CNT"),
+            expect: (1, "CNT"),
         },
         Case {
             input_dict: vec!["count", "canet"],
             input_word: "canet",
-            expect: (1, "cnt"),
+            expect: (0, "cnt"),
         },
         Case {
             input_dict: vec!["count", "canet"],
@@ -329,7 +329,7 @@ fn compress_expand_word() {
         Case {
             input_dict: vec!["яблоко", "яблоки"],
             input_word: "Яблоки",
-            expect: (1, "Блк"),
+            expect: (0, "Блк"),
         },
         Case {
             input_dict: vec![""],

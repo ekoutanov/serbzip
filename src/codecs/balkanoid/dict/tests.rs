@@ -9,20 +9,20 @@ fn populate_incremental() {
 
     dict.populate(stringify(["uno", "one", "no"]));
     assert_eq!(
-        HashMap::from([(String::from("n"), stringify(["no", "uno", "one"]))]),
+        HashMap::from([(String::from("n"), stringify(["no", "one", "uno"]))]),
         dict.entries
     );
 
     dict.populate(stringify(["Anna"]));
     assert_eq!(
-        HashMap::from([(String::from("n"), stringify(["no", "uno", "one"])),]),
+        HashMap::from([(String::from("n"), stringify(["no", "one", "uno"])),]),
         dict.entries
     );
 
     dict.populate(stringify(["anna"]));
     assert_eq!(
         HashMap::from([
-            (String::from("n"), stringify(["no", "uno", "one"])),
+            (String::from("n"), stringify(["no", "one", "uno"])),
             (String::from("nn"), stringify(["anna"]))
         ]),
         dict.entries
@@ -31,7 +31,7 @@ fn populate_incremental() {
     dict.populate(stringify(["half-time"]));
     assert_eq!(
         HashMap::from([
-            (String::from("n"), stringify(["no", "uno", "one"])),
+            (String::from("n"), stringify(["no", "one", "uno"])),
             (String::from("nn"), stringify(["anna"])),
             (String::from("hlf-tm"), stringify(["half-time"]))
         ]),
@@ -43,7 +43,7 @@ fn populate_incremental() {
         HashMap::from([
             (
                 String::from("n"),
-                stringify(["no", "on", "an", "in", "uno", "one"])
+                stringify(["an", "in", "no", "on", "one", "uno"])
             ),
             (String::from("nn"), stringify(["inn", "anna"])),
             (String::from("hlf-tm"), stringify(["half-time"]))
@@ -56,7 +56,7 @@ fn populate_incremental() {
         HashMap::from([
             (
                 String::from("n"),
-                stringify(["no", "on", "an", "in", "uno", "one"])
+                stringify(["an", "in", "no", "on", "one", "uno"])
             ),
             (String::from("nn"), stringify(["inn", "anna"])),
             (String::from("hlf-tm"), stringify(["half-time"]))

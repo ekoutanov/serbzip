@@ -28,7 +28,7 @@ impl Dict {
                         panic!("too many words associated with the fingerprint '{}'", word);
                     }
                     mapped_words.push(word);
-                    mapped_words.sort_by(|lhs, rhs| lhs.len().cmp(&rhs.len()));
+                    mapped_words.sort_by(|lhs, rhs| lhs.len().cmp(&rhs.len()).then(lhs.cmp(rhs)));
                 }
             }
         }

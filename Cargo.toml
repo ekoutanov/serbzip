@@ -5,6 +5,7 @@ edition = "2021"
 authors = ["Emil Koutanov"]
 license = "MIT"
 description = "A quasi-lossless Balkanoidal meta-lingual compressor."
+repository = "https://github.com/ekoutanov/serbzip"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -21,8 +22,8 @@ reqwest = { version = "0.11", features = ["blocking"], optional = true }
 rand = "0.8.5"
 
 [features]
-build-binary = ["clap", "home", "reqwest"]
+binary = ["dep:clap", "dep:home", "dep:reqwest"]
 
 [[bin]]
 name = "serbzip"
-required-features = ["build-binary"]
+required-features = ["binary"]
