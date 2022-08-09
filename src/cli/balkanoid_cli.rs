@@ -1,12 +1,12 @@
 use crate::cli::app_error::{AppError, CliError, CliErrorDetail, CliErrorKind};
 use crate::cli::banner::{BLUE, RED, WHITE};
-use crate::cli::{banner, downloader, is_extension, Args, Mode};
+use crate::cli::{banner, downloader, is_extension, Args, Mode, compress_helper, expand_helper};
 use serbzip::codecs::balkanoid::{Balkanoid, Dict};
-use serbzip::codecs::Codec;
 use std::borrow::Borrow;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
+use serbzip::succinct::CowStr;
 
 const DICT_EXT_BINARY: &str = "blk";
 const DICT_EXT_TEXT: &str = "txt";
@@ -34,7 +34,7 @@ pub(super) fn run(args: &Args) -> Result<(), AppError> {
     let dict = {
         let dict_path = args.dict_path()?;
         let unsupported_format_err = || {
-            AppError::from(CliError(CliErrorKind::UnsupportedDictionaryFormat, CliErrorDetail::Owned(format!("unsupported dictionary format for {dict_path:?}: only .{DICT_EXT_TEXT} and .{DICT_EXT_BINARY} files can be read"))))
+            AppError::from(CliError(CliErrorKind::UnsupportedDictFormat, CliErrorDetail::Owned(format!("unsupported dictionary format for {dict_path:?}: only .{DICT_EXT_TEXT} and .{DICT_EXT_BINARY} files can be read"))))
         };
         match args.dict_path()?.extension() {
             None => Err(unsupported_format_err()),
@@ -52,36 +52,33 @@ pub(super) fn run(args: &Args) -> Result<(), AppError> {
         }?
     };
 
-    // if the imaging option has been set, serialize dict to a user-specified file
-    if let Some(image_output_file) = args.dictionary_image_output_file() {
-        if !is_extension(image_output_file, DICT_EXT_BINARY) {
-            return Err(AppError::from(CliError(
-                CliErrorKind::UnsupportedBinaryDictionaryFormat,
-                CliErrorDetail::Borrowed(
-                    "only .{DICT_EXT_BINARY} files are supported for compiled dictionaries",
-                ),
-            )));
+    match args.mode()? {
+        Mode::Compress => compress_helper(args, &Balkanoid::new(&dict)),
+        Mode::Expand => expand_helper(args, &Balkanoid::new(&dict)),
+        Mode::Compile => { // if the imaging option has been set, serialize dict to a user-specified file
+            match args.dictionary_image_output_file() {
+                None => Err(AppError::from(CliError(CliErrorKind::UnspecifiedBinaryDictOutputFile, CowStr::Borrowed("dictionary output file not specified")))),
+                Some(image_output_file) => {
+                    if !is_extension(image_output_file, DICT_EXT_BINARY) {
+                        return Err(AppError::from(CliError(
+                            CliErrorKind::UnsupportedBinaryDictFormat,
+                            CliErrorDetail::Owned(
+                                format!("only .{DICT_EXT_BINARY} files are supported for compiled dictionaries"),
+                            ),
+                        )));
+                    }
+                    eprintln!(
+                        "Writing compiled dictionary image to {image_output_file} ({words} words)",
+                        words = dict.count()
+                    );
+                    let mut writer = BufWriter::new(File::create(image_output_file)?);
+                    dict.write_to_binary_image(&mut writer)?;
+                    writer.flush()?;
+                    Ok(())
+                }
+            }
         }
-        eprintln!(
-            "Writing compiled dictionary image to {image_output_file} ({words} words)",
-            words = dict.count()
-        );
-        let mut writer = BufWriter::new(File::create(image_output_file)?);
-        dict.write_to_binary_image(&mut writer)?;
-        writer.flush()?;
-        return Ok(());
     }
-
-    let mode = args.mode()?;
-    let input_reader = args.input_reader()?;
-    let mut output_writer: Box<dyn Write> = args.output_writer()?;
-    let codec = Balkanoid::new(&dict);
-    match mode {
-        Mode::Compress => codec.compress(&mut BufReader::new(input_reader), &mut output_writer)?,
-        Mode::Expand => codec.expand(&mut BufReader::new(input_reader), &mut output_writer)?,
-    }
-    output_writer.flush()?;
-    Ok(())
 }
 
 impl Args {

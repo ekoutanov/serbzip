@@ -24,7 +24,7 @@ fn compress_and_expand_large_docs() {
 }
 
 fn read_default_dict() -> Dict {
-    Dict::read_from_binary_image(&mut BufReader::new(File::open("dict.img").unwrap())).unwrap()
+    Dict::read_from_binary_image(&mut BufReader::new(File::open("dict.blk").unwrap())).unwrap()
 }
 
 fn test_compress_and_expand(dict: &Dict, original_file: &str) {

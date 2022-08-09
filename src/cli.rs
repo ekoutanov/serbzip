@@ -3,10 +3,11 @@ use serbzip::succinct::{CowStr, Errorlike};
 use std::ffi::OsString;
 use std::fmt::{Debug};
 use std::fs::{File};
-use std::io::{BufWriter, Read, Write};
+use std::io::{BufReader, BufWriter, Read, Write};
 use std::str::FromStr;
 use std::{env, io};
 use std::path::Path;
+use serbzip::codecs::Codec;
 use crate::cli::app_error::{AppError, CliError, CliErrorDetail, CliErrorKind};
 
 pub mod banner;
@@ -53,7 +54,11 @@ struct Args {
     #[clap(short = 'x', long, value_parser)]
     expand: bool,
 
-    /// Dictionary file (.txt for a text file, .img for binary image)
+    /// Compile dictionary image
+    #[clap(short = 'p', long, value_parser)]
+    compile: bool,
+
+    /// Dictionary file (.txt for a text file, .blk for binary image)
     #[clap(short, long, value_parser)]
     dictionary: Option<String>,
 
@@ -78,6 +83,7 @@ struct Args {
 enum Mode {
     Compress,
     Expand,
+    Compile
 }
 
 impl Args {
@@ -90,13 +96,14 @@ impl Args {
     }
 
     fn mode(&self) -> Result<Mode, CliError> {
-        match (self.compress, self.expand) {
-            (true, true) | (false, false) => Err(CliError(
+        match (self.compress, self.expand, self.compile) {
+            (true, false, false) => Ok(Mode::Compress),
+            (false, true, false) => Ok(Mode::Expand),
+            (false, false, true) => Ok(Mode::Compile),
+            _ => Err(CliError(
                 CliErrorKind::InvalidMode,
-                CliErrorDetail::Borrowed("either one of --compress or --expand must be specified"),
+                CliErrorDetail::Borrowed("either one of --compress, --expand or --compile must be specified"),
             )),
-            (true, false) => Ok(Mode::Compress),
-            (false, true) => Ok(Mode::Expand),
         }
     }
 
@@ -127,6 +134,26 @@ impl Args {
     fn dictionary_image_output_file(&self) -> &Option<String> {
         &self.dictionary_image_output_file
     }
+}
+
+fn compress_helper(args: &Args, codec: &impl Codec) -> Result<(), AppError> {
+    let input_reader = args.input_reader()?;
+    let mut output_writer: Box<dyn Write> = args.output_writer()?;
+    codec.compress(&mut BufReader::new(input_reader), &mut output_writer)?;
+    output_writer.flush()?;
+    Ok(())
+}
+
+fn expand_helper<C>(args: &Args, codec: &C) -> Result<(), AppError>
+    where
+        C: Codec,
+        <C as Codec>::ExpandError: 'static
+{
+    let input_reader = args.input_reader()?;
+    let mut output_writer: Box<dyn Write> = args.output_writer()?;
+    codec.expand(&mut BufReader::new(input_reader), &mut output_writer)?;
+    output_writer.flush()?;
+    Ok(())
 }
 
 fn is_extension(filename: &impl AsRef<Path>, ext: &str) -> bool {

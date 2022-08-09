@@ -8,9 +8,11 @@ use crate::cli::downloader::DownloadToFileError;
 
 #[derive(Debug)]
 pub enum CliErrorKind {
-    UnsupportedDictionaryFormat,
-    UnsupportedBinaryDictionaryFormat,
+    UnsupportedDictFormat,
+    UnsupportedBinaryDictFormat,
+    UnspecifiedBinaryDictOutputFile,
     InvalidMode,
+    UnsupportedMode,
     NoSuchInputFile,
     NoHomeDir,
     NoSuchDictFile,
