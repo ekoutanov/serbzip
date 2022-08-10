@@ -7,7 +7,13 @@ use std::io::{Cursor, Seek, SeekFrom};
 fn populate_incremental() {
     let mut dict = Dict::default();
 
-    dict.populate(stringify(["uno", "one", "no"]));
+    dict.populate(stringify(["uno", "no"]));
+    assert_eq!(
+        HashMap::from([(String::from("n"), stringify(["no", "uno"]))]),
+        dict.entries
+    );
+
+    dict.populate(stringify(["one", "one", "no"]));
     assert_eq!(
         HashMap::from([(String::from("n"), stringify(["no", "one", "uno"]))]),
         dict.entries

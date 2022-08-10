@@ -36,7 +36,7 @@ This brings up `serb.zip`, running the `balkanoid` codec, in interactive mode.
 Enter text; CTRL+D when done.
 ```
 
-Let's key in the first verse of Mearns' "Antagonish". Enter the following text, line by line, and hit CTRL+D when done.
+Let's key in the first verse of Mearns' "Antigonish". Enter the following text, line by line, and hit CTRL+D when done.
 
 ```
 Yesterday, upon the stair,
@@ -127,7 +127,7 @@ on
 the resulting dictionary is
 
 ```
-"cme" -> ["came", "come"]
+"cm" -> ["came", "come"]
 "cnt" -> ["cent", "count"]
 "n" -> ["in", "no", "on"]
 "t" -> ["at", "it"]
@@ -143,7 +143,7 @@ The **punctuation rules** are used to efficiently deal with punctuated words suc
 1. If the first character of the word is a backslash (`'\'`), then move the backslash into the head of the prefix. For the 2nd and subsequent characters, move the longest contiguous string of alphabetical characters from the start of the string into the prefix, while assigning the rest of the string to the suffix.
 2. If the first character is not a backslash, split the word such that the prefix encompasses the longest contiguous string of alphabetical characters from the start of the word. The suffix contains all other characters.
 
-For example, for `"bananas!!!"`, the punctuation tuple is `("bananas", "!!!")`, by rule 2. For an unpunctuated word, the prefix encompasses the entire word (again, by rule 2), while the suffix is an empty string; e.g., `"pear"` splits to `("pear", "")`. For a word such as `"\foo?"`, the punctuation tuple is `("\foo", "?")`, by rule 1. For a single backslash `"\"`, the result is `("\", "")`. For a series of backslashes `"\\\"`, the result is `("\", "\\")`.
+For example, for `"bananas!!!"`, the punctuation tuple is `("bananas", "!!!")`, by rule 2. For an unpunctuated word, the prefix encompasses the entire word (again, by rule 2), while the suffix is an empty string; e.g., `"pear"` splits to `("pear", "")`. For a word such as `"\foo?"`, the punctuation tuple is `("\foo", "?")`, by rule 1 — the first backslash is admitted to the prefix. For a single backslash `"\"`, the result is `("\", "")`, as per rule 1. For a series of backslashes `"\\\"`, the result is `("\", "\\")`.
 
 When a word comprises multiple fragments separated by non-alphabetical characters, only the first fragment is assigned to the prefix; e.g., `"dog@pound.com"` becomes `("dog", "@pound.com")`. This a rare example of a relatively long suffix; ordinarily, suffixes comprise trailing punctuation symbols, which are prevalent in English and East-Slavic languages. Although one might think that multi-fragment words could be expressed as N-tuples and encoded accordingly, this would render the algorithm irreversible for some words.
 
@@ -152,7 +152,7 @@ The **compaction rules** are used to de-vowel the word, being the essence of the
 1. Convert the word-prefix to lowercase and generate its fingerprint. Resolve the (0-based) position of the lowercased prefix in the vector of strings mapped from the fingerprint. If the word-prefix is in the dictionary, then encode it by padding the output with a string of whitespace characters — the length of the string equal to the position of the prefix in the vector — then output the fingerprint. E.g., assume the word-prefix `"no"` is positioned second in the dictionary mapping for its fingerprint: `"n" -> ["in", "no", "on"]`. It would then be encoded as `"␣n"` — one space followed by its fingerprint. The word `"on"` would have required two spaces — `"␣␣n"`.
 2. Otherwise, if the word-prefix is not in the dictionary and contains one or more vowels, it is encoded as-is. E.g., the word-prefix `"tea"`, which is not in our sample dictionary, but contains a vowel, is encoded as `"tea"`.
 3. Otherwise, if the word-prefix comprises only consonants and its fingerprint does not appear in the dictionary, it is encoded as-is. E.g., the word-prefix `"psst"` is not mapped, so it is encoded with no change — `"psst"`. This case is much more frequent in East-Slavic than it is in English; in the latter, words comprising only consonants are either abbreviations, acronyms or representations of sounds.
-4. Otherwise, prepend a backslash (`'\'`) to the word-prefix. E.g., the word-prefix `"cnt"`, comprising all-consonants, having no resolvable position in `"cnt" -> ["cent", "count"]` for an existing fingerprint `"cnt"`, is encoded as `"\cnt"`. Without this rule, `"cnt"` with no leading spaces might be reversed into `"cent"`... or something entirely different.
+4. Otherwise, prepend a backslash (`'\'`) to the word-prefix. E.g., the word-prefix `"cnt"`, comprising all-consonants, having no resolvable position in `"cnt" -> ["cent", "count"]` for an existing fingerprint `"cnt"`, is encoded as `"\cnt"`. Without this rule, `"cnt"` with no leading spaces might be reversed into `"cent"`... or something entirely different and less fortunate.
 
 The **capitalisation** rules encode capitalisation _hints_ into the output so that the word-prefix may have its capitalisation restored. These rules is not perfectly reversible, but cope well in the overwhelming majority of cases.
 

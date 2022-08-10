@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use crate::codecs::balkanoid::Reduction;
 use crate::succinct::{CowStr, Errorlike};
 use bincode::config;
@@ -14,6 +15,10 @@ pub struct Dict {
 
 pub type WordResolveError = Errorlike<CowStr>;
 
+fn comparator(lhs: &String, rhs: &String) -> Ordering {
+    lhs.len().cmp(&rhs.len()).then(lhs.cmp(rhs))
+}
+
 impl Dict {
     pub fn populate(&mut self, line: impl IntoIterator<Item = String>) {
         for word in line {
@@ -27,8 +32,11 @@ impl Dict {
                     if mapped_words.len() == u8::MAX as usize {
                         panic!("too many words associated with the fingerprint '{}'", word);
                     }
+                    if let Result::Ok(_) = mapped_words.binary_search_by(|candidate| comparator(candidate, &word)) {
+                        continue
+                    }
                     mapped_words.push(word);
-                    mapped_words.sort_by(|lhs, rhs| lhs.len().cmp(&rhs.len()).then(lhs.cmp(rhs)));
+                    mapped_words.sort_by(comparator);
                 }
             }
         }
