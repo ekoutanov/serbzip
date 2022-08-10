@@ -1,4 +1,4 @@
-<img src="logo/logo.png" width="300px" alt="logo"/>
+<img src="logo/logo.png" width="300px" alt="logo"/> &nbsp;
 ===
 
 # Background
