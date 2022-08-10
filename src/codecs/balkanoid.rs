@@ -186,13 +186,13 @@ impl EncodedWord {
 }
 
 #[derive(Debug, PartialEq)]
-struct SplitWord<'a> {
+struct PunctuatedWord<'a> {
     prefix: Cow<'a, str>,
     suffix: Cow<'a, str>,
 }
 
-impl SplitWord<'_> {
-    fn from(word: &str) -> SplitWord {
+impl PunctuatedWord<'_> {
+    fn from(word: &str) -> PunctuatedWord {
         let position = word.chars().enumerate().position(|(position, ch)| {
             match position {
                 0 => !(ch.is_alphabetic() || ch == '\\'), // allow the escape character to be the first in the string
@@ -200,14 +200,14 @@ impl SplitWord<'_> {
             }
         });
         match position {
-            None => SplitWord {
+            None => PunctuatedWord {
                 prefix: Cow::Borrowed(word),
                 suffix: Cow::Borrowed(""),
             },
             Some(position) => {
                 let prefix = word.chars().take(position).collect::<String>();
                 let suffix = word.chars().skip(position).collect::<String>();
-                SplitWord {
+                PunctuatedWord {
                     prefix: Cow::Owned(prefix),
                     suffix: Cow::Owned(suffix),
                 }
@@ -225,14 +225,14 @@ enum CompactionRule {
 }
 
 fn compress_word(dict: &Dict, word: &str) -> EncodedWord {
-    let split = SplitWord::from(word);
-    let prefix_reduction = Reduction::from(&split.prefix as &str);
+    let punctuated = PunctuatedWord::from(word);
+    let prefix_reduction = Reduction::from(&punctuated.prefix as &str);
     // println!("prefix reduction {prefix_reduction:?}");
-    let lowercase_prefix = split.prefix.to_lowercase();
+    let lowercase_prefix = punctuated.prefix.to_lowercase();
     let (encoded_prefix, rule) =
         match dict.position(&prefix_reduction.fingerprint, &lowercase_prefix) {
             None => {
-                if split.prefix.len() != prefix_reduction.fingerprint.len() {
+                if punctuated.prefix.len() != prefix_reduction.fingerprint.len() {
                     // the input comprises one or more vowels
                     ((0, lowercase_prefix), CompactionRule::NotInDictWithVowels)
                 } else if !dict.contains_fingerprint(&prefix_reduction.fingerprint) {
@@ -242,7 +242,7 @@ fn compress_word(dict: &Dict, word: &str) -> EncodedWord {
                     // the input comprises only consonants and there are other words in the
                     // dict with a matching fingerprint
                     (
-                        (0, format!("\\{}", split.prefix)),
+                        (0, format!("\\{}", punctuated.prefix)),
                         CompactionRule::Conflict,
                     )
                 }
@@ -259,7 +259,7 @@ fn compress_word(dict: &Dict, word: &str) -> EncodedWord {
     // println!("rule: {rule:?}");
     match rule {
         CompactionRule::Conflict => {
-            EncodedWord::new(encoded_prefix.0, encoded_prefix.1 + &split.suffix)
+            EncodedWord::new(encoded_prefix.0, encoded_prefix.1 + &punctuated.suffix)
         }
         _ => {
             let recapitalised_prefix = restore_capitalisation(
@@ -267,7 +267,7 @@ fn compress_word(dict: &Dict, word: &str) -> EncodedWord {
                 prefix_reduction.leading_capital,
                 prefix_reduction.trailing_capitals != 0,
             );
-            EncodedWord::new(encoded_prefix.0, recapitalised_prefix + &split.suffix)
+            EncodedWord::new(encoded_prefix.0, recapitalised_prefix + &punctuated.suffix)
         }
     }
 }
@@ -277,7 +277,7 @@ fn restore_capitalisation(
     leading_capital: bool,
     nonleading_capital: bool,
 ) -> String {
-    if leading_capital && nonleading_capital {
+    if nonleading_capital {
         lowercase_word.to_uppercase()
     } else if leading_capital {
         let mut chars = lowercase_word.chars();
@@ -290,28 +290,28 @@ fn restore_capitalisation(
 const ESCAPE: u8 = b'\\';
 
 fn expand_word(dict: &Dict, word: EncodedWord) -> Result<String, WordResolveError> {
-    let split = SplitWord::from(&word.body);
-    if split.prefix.is_empty() {
+    let punctuated = PunctuatedWord::from(&word.body);
+    if punctuated.prefix.is_empty() {
         return Ok(word.body);
     }
 
-    let recapitalised_prefix = if split.prefix.as_bytes()[0] == ESCAPE {
+    let recapitalised_prefix = if punctuated.prefix.as_bytes()[0] == ESCAPE {
         // escaped word
-        if split.prefix.len() > 1 {
-            split.prefix[1..split.prefix.len()].to_owned()
+        if punctuated.prefix.len() > 1 {
+            punctuated.prefix[1..punctuated.prefix.len()].to_owned()
         } else {
-            split.prefix.into_owned()
+            punctuated.prefix.into_owned()
         }
     } else {
-        let mut chars = split.prefix.chars();
+        let mut chars = punctuated.prefix.chars();
         let leading_capital = chars.next().unwrap().is_uppercase();
         let nonleading_capital = chars.next().map_or(false, char::is_uppercase);
 
-        let resolved_lowercase = if contains_vowels(&split.prefix) {
+        let resolved_lowercase = if contains_vowels(&punctuated.prefix) {
             // word encoded with vowels
-            split.prefix.into_owned()
+            punctuated.prefix.into_owned()
         } else {
-            let lowercase_word = split.prefix.to_lowercase();
+            let lowercase_word = punctuated.prefix.to_lowercase();
             match dict.resolve(&lowercase_word, word.leading_spaces)? {
                 None => {
                     // the fingerprint is not in the dictionary
@@ -327,7 +327,7 @@ fn expand_word(dict: &Dict, word: EncodedWord) -> Result<String, WordResolveErro
         restore_capitalisation(resolved_lowercase, leading_capital, nonleading_capital)
     };
 
-    Ok(recapitalised_prefix + &split.suffix)
+    Ok(recapitalised_prefix + &punctuated.suffix)
 }
 
 fn contains_vowels(text: &str) -> bool {

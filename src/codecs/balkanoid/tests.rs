@@ -118,7 +118,7 @@ fn reduction_take_if_lowercase() {
 }
 
 #[test]
-fn split_word() {
+fn punctuate_word() {
     struct Case {
         input: &'static str,
         expect: (&'static str, &'static str),
@@ -169,11 +169,11 @@ fn split_word() {
             expect: ("\\яблоко", "!"),
         },
     ] {
-        let expected = SplitWord {
+        let expected = PunctuatedWord {
             prefix: Cow::Borrowed(case.expect.0),
             suffix: Cow::Borrowed(case.expect.1),
         };
-        let actual = SplitWord::from(case.input);
+        let actual = PunctuatedWord::from(case.input);
         assert_eq!(expected, actual, "for input '{}'", case.input);
     }
 }

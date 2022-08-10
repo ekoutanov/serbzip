@@ -10,17 +10,22 @@ use std::path::{Path, PathBuf};
 fn compress_and_expand_small_docs() {
     let dict = read_default_dict();
     test_compress_and_expand(&dict, "test_data/antigonish.txt");
-    test_compress_and_expand(&dict, "test_data/the_raven.txt");
+    test_compress_and_expand(&dict, "test_data/effective_kafka.txt");
     test_compress_and_expand(&dict, "test_data/sherlock_holmes.txt");
+    test_compress_and_expand(&dict, "test_data/the_raven.txt");
 }
 
 #[test]
 #[ignore]
 fn compress_and_expand_large_docs() {
     let dict = read_default_dict();
-    test_compress_and_expand(&dict, "test_data/mormon.txt");
     test_compress_and_expand(&dict, "test_data/anna_karenina_eng.txt");
     test_compress_and_expand(&dict, "test_data/anna_karenina_rus.txt");
+    test_compress_and_expand(&dict, "test_data/mormon.txt");
+    test_compress_and_expand(&dict, "test_data/new_testament.txt");
+    test_compress_and_expand(&dict, "test_data/jane_eyre.txt");
+    test_compress_and_expand(&dict, "test_data/war_and_peace_eng.txt");
+    test_compress_and_expand(&dict, "test_data/war_and_peace_rus.txt");
 }
 
 fn read_default_dict() -> Dict {
