@@ -427,7 +427,7 @@ fn expand_line_cannot_resolve() {
 }
 
 #[test]
-fn compression_rule_implements_debug() {
-    let formatted = format!("{:?}", CompressionRule::Conflict);
+fn compaction_rule_implements_debug() {
+    let formatted = format!("{:?}", CompactionRule::Conflict);
     assert_eq!("Conflict", formatted);
 }

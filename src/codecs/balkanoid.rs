@@ -217,7 +217,7 @@ impl SplitWord<'_> {
 }
 
 #[derive(Debug)]
-enum CompressionRule {
+enum CompactionRule {
     InDict,
     NotInDictWithVowels,
     NoFingerprintInDict,
@@ -234,16 +234,16 @@ fn compress_word(dict: &Dict, word: &str) -> EncodedWord {
             None => {
                 if split.prefix.len() != prefix_reduction.fingerprint.len() {
                     // the input comprises one or more vowels
-                    ((0, lowercase_prefix), CompressionRule::NotInDictWithVowels)
+                    ((0, lowercase_prefix), CompactionRule::NotInDictWithVowels)
                 } else if !dict.contains_fingerprint(&prefix_reduction.fingerprint) {
                     // the input comprises only consonants and its fingerprint is not in the dict
-                    ((0, lowercase_prefix), CompressionRule::NoFingerprintInDict)
+                    ((0, lowercase_prefix), CompactionRule::NoFingerprintInDict)
                 } else {
                     // the input comprises only consonants and there are other words in the
                     // dict with a matching fingerprint
                     (
                         (0, format!("\\{}", split.prefix)),
-                        CompressionRule::Conflict,
+                        CompactionRule::Conflict,
                     )
                 }
             }
@@ -251,14 +251,14 @@ fn compress_word(dict: &Dict, word: &str) -> EncodedWord {
                 // the dictionary contains the lower-cased input
                 (
                     (position, prefix_reduction.fingerprint),
-                    CompressionRule::InDict,
+                    CompactionRule::InDict,
                 )
             }
         };
 
     // println!("rule: {rule:?}");
     match rule {
-        CompressionRule::Conflict => {
+        CompactionRule::Conflict => {
             EncodedWord::new(encoded_prefix.0, encoded_prefix.1 + &split.suffix)
         }
         _ => {
@@ -277,24 +277,13 @@ fn restore_capitalisation(
     leading_capital: bool,
     nonleading_capital: bool,
 ) -> String {
-    match lowercase_word.len() {
-        1 => {
-            if leading_capital {
-                lowercase_word.to_uppercase()
-            } else {
-                lowercase_word
-            }
-        }
-        _ => {
-            if leading_capital && nonleading_capital {
-                lowercase_word.to_uppercase()
-            } else if leading_capital {
-                let mut chars = lowercase_word.chars();
-                chars.next().unwrap().to_uppercase().to_string() + chars.as_str()
-            } else {
-                lowercase_word
-            }
-        }
+    if leading_capital && nonleading_capital {
+        lowercase_word.to_uppercase()
+    } else if leading_capital {
+        let mut chars = lowercase_word.chars();
+        chars.next().unwrap().to_uppercase().to_string() + chars.as_str()
+    } else {
+        lowercase_word
     }
 }
 
