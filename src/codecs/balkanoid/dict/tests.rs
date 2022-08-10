@@ -57,7 +57,7 @@ fn populate_incremental() {
         dict.entries
     );
 
-    dict.populate(stringify(["i", "aio"]));
+    dict.populate(stringify(["i", "one", "aio"]));
     assert_eq!(
         HashMap::from([
             (
