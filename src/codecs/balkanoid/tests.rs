@@ -183,162 +183,217 @@ fn compress_expand_word() {
     struct Case {
         input_dict: Vec<&'static str>,
         input_word: &'static str,
-        expect: (u8, &'static str),
+        expect_encoded: (u8, &'static str),
+        expect_proper_capitalisation: bool,
     }
     for case in vec![
         Case {
             input_dict: vec!["count", "canet"],
             input_word: "count",
-            expect: (1, "cnt"),
+            expect_encoded: (1, "cnt"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["count", "canet"],
             input_word: "Count",
-            expect: (1, "Cnt"),
+            expect_encoded: (1, "Cnt"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["count", "canet"],
             input_word: "CoUnt",
-            expect: (1, "CNT"),
+            expect_encoded: (1, "CNT"),
+            expect_proper_capitalisation: false
+        },
+        Case {
+            input_dict: vec!["canet"],
+            input_word: "CoUnt",
+            expect_encoded: (0, "CoUnt"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["count", "canet"],
             input_word: "CounT",
-            expect: (1, "CNT"),
+            expect_encoded: (1, "CNT"),
+            expect_proper_capitalisation: false
         },
         Case {
             input_dict: vec!["count", "canet"],
             input_word: "canet",
-            expect: (0, "cnt"),
+            expect_encoded: (0, "cnt"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["count", "canet"],
             input_word: "cont",
-            expect: (0, "cont"),
+            expect_encoded: (0, "cont"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["count", "canet"],
             input_word: "Cont",
-            expect: (0, "Cont"),
+            expect_encoded: (0, "Cont"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["count", "canet"],
             input_word: "ConT",
-            expect: (0, "CONT"),
+            expect_encoded: (0, "ConT"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["count", "canet"],
             input_word: "cnt",
-            expect: (0, "\\cnt"),
+            expect_encoded: (0, "\\cnt"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["count", "canet"],
             input_word: "Cnt",
-            expect: (0, "\\Cnt"),
+            expect_encoded: (0, "\\Cnt"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["count", "canet"],
             input_word: "CnT",
-            expect: (0, "\\CnT"),
+            expect_encoded: (0, "\\CnT"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["count", "canet"],
             input_word: "mark",
-            expect: (0, "mark"),
+            expect_encoded: (0, "mark"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec![],
             input_word: "kgb",
-            expect: (0, "kgb"),
+            expect_encoded: (0, "kgb"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["kagoob"],
             input_word: "kgb",
-            expect: (0, "\\kgb"),
+            expect_encoded: (0, "\\kgb"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["kgb"],
             input_word: "kgb",
-            expect: (0, "kgb"),
+            expect_encoded: (0, "kgb"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["as", "is"],
             input_word: "a",
-            expect: (0, "a"),
+            expect_encoded: (0, "a"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["as", "is"],
             input_word: "aio",
-            expect: (0, "aio"),
+            expect_encoded: (0, "aio"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["as", "is"],
             input_word: "AIO",
-            expect: (0, "AIO"),
+            expect_encoded: (0, "AIO"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["as", "is"],
             input_word: "A",
-            expect: (0, "A"),
+            expect_encoded: (0, "A"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["as", "is"],
             input_word: "s.",
-            expect: (0, "\\s."),
+            expect_encoded: (0, "\\s."),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["as", "is"],
             input_word: "S.",
-            expect: (0, "\\S."),
+            expect_encoded: (0, "\\S."),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["prpr"],
             input_word: "-prPr-",
-            expect: (0, "-prPr-"),
+            expect_encoded: (0, "-prPr-"),
+            expect_proper_capitalisation: true
+        },
+        Case {
+            input_dict: vec!["ra"],
+            input_word: "ra",
+            expect_encoded: (0, "r"),
+            expect_proper_capitalisation: true
+        },
+        Case {
+            input_dict: vec!["ra"],
+            input_word: "Ra",
+            expect_encoded: (0, "R"),
+            expect_proper_capitalisation: true
+        },
+        Case {
+            input_dict: vec!["ra"],
+            input_word: "RA",
+            expect_encoded: (0, "R"),
+            expect_proper_capitalisation: false
         },
         Case {
             input_dict: vec![""],
             input_word: "\\",
-            expect: (0, "\\"),
+            expect_encoded: (0, "\\"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec![""],
             input_word: "\\\\",
-            expect: (0, "\\\\"),
+            expect_encoded: (0, "\\\\"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec![""],
             input_word: "attaché",
-            expect: (0, "attaché"),
+            expect_encoded: (0, "attaché"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec![""],
             input_word: "attaché,",
-            expect: (0, "attaché,"),
+            expect_encoded: (0, "attaché,"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["яблоко"],
             input_word: "яблоко",
-            expect: (0, "блк"),
+            expect_encoded: (0, "блк"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["яблоко"],
             input_word: "Яблоко",
-            expect: (0, "Блк"),
+            expect_encoded: (0, "Блк"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec!["яблоко", "яблоки"],
             input_word: "Яблоки",
-            expect: (0, "Блк"),
+            expect_encoded: (0, "Блк"),
+            expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec![""],
             input_word: "уж",
-            expect: (0, "уж"),
+            expect_encoded: (0, "уж"),
+            expect_proper_capitalisation: true
         },
     ] {
         let dict = Dict::from(case.input_dict.clone());
-        let expected = EncodedWord::new(case.expect.0, case.expect.1.to_owned());
+        let expected = EncodedWord::new(case.expect_encoded.0, case.expect_encoded.1.to_owned());
         let actual = compress_word(&dict, case.input_word);
         assert_eq!(
             expected, actual,
@@ -350,10 +405,27 @@ fn compress_expand_word() {
         assert_eq!(
             case.input_word.to_lowercase(),
             expanded.to_lowercase(),
-            "[expansion] for input '{}' with dict {:?}",
+            "[expansion, case-insensitive check] for input '{}' with dict {:?}",
             case.input_word,
             &case.input_dict
         );
+        if case.expect_proper_capitalisation {
+            assert_eq!(
+                case.input_word,
+                expanded,
+                "[expansion, case-sensitive check, expect equal] for input '{}' with dict {:?}",
+                case.input_word,
+                &case.input_dict
+            );
+        } else {
+            assert_ne!(
+                case.input_word,
+                expanded,
+                "[expansion, case-sensitive check, expect unequal] for input '{}' with dict {:?}",
+                case.input_word,
+                &case.input_dict
+            );
+        }
     }
 }
 

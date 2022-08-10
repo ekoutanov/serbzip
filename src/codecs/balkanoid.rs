@@ -4,6 +4,7 @@ use crate::codecs::balkanoid::dict::WordResolveError;
 use crate::codecs::Codec;
 pub use dict::Dict;
 use std::borrow::Cow;
+use crate::succinct::Stringlike;
 
 pub struct Balkanoid<'a> {
     dict: &'a Dict,
@@ -234,10 +235,10 @@ fn compress_word(dict: &Dict, word: &str) -> EncodedWord {
             None => {
                 if punctuated.prefix.len() != prefix_reduction.fingerprint.len() {
                     // the input comprises one or more vowels
-                    ((0, lowercase_prefix), CompactionRule::NotInDictWithVowels)
+                    ((0, punctuated.prefix.into_owned()), CompactionRule::NotInDictWithVowels)
                 } else if !dict.contains_fingerprint(&prefix_reduction.fingerprint) {
                     // the input comprises only consonants and its fingerprint is not in the dict
-                    ((0, lowercase_prefix), CompactionRule::NoFingerprintInDict)
+                    ((0, punctuated.prefix.into_owned()), CompactionRule::NoFingerprintInDict)
                 } else {
                     // the input comprises only consonants and there are other words in the
                     // dict with a matching fingerprint
@@ -258,16 +259,16 @@ fn compress_word(dict: &Dict, word: &str) -> EncodedWord {
 
     // println!("rule: {rule:?}");
     match rule {
-        CompactionRule::Conflict => {
-            EncodedWord::new(encoded_prefix.0, encoded_prefix.1 + &punctuated.suffix)
-        }
-        _ => {
+        CompactionRule::InDict => {
             let recapitalised_prefix = restore_capitalisation(
                 encoded_prefix.1,
                 prefix_reduction.leading_capital,
                 prefix_reduction.trailing_capitals != 0,
             );
             EncodedWord::new(encoded_prefix.0, recapitalised_prefix + &punctuated.suffix)
+        }
+        _ => {
+            EncodedWord::new(encoded_prefix.0, encoded_prefix.1 + &punctuated.suffix)
         }
     }
 }
@@ -298,7 +299,7 @@ fn expand_word(dict: &Dict, word: EncodedWord) -> Result<String, WordResolveErro
     let recapitalised_prefix = if punctuated.prefix.as_bytes()[0] == ESCAPE {
         // escaped word
         if punctuated.prefix.len() > 1 {
-            punctuated.prefix[1..punctuated.prefix.len()].to_owned()
+            punctuated.prefix[1..punctuated.prefix.len()].into_owned()
         } else {
             punctuated.prefix.into_owned()
         }
@@ -307,7 +308,7 @@ fn expand_word(dict: &Dict, word: EncodedWord) -> Result<String, WordResolveErro
         let leading_capital = chars.next().unwrap().is_uppercase();
         let nonleading_capital = chars.next().map_or(false, char::is_uppercase);
 
-        let resolved_lowercase = if contains_vowels(&punctuated.prefix) {
+        if contains_vowels(&punctuated.prefix) {
             // word encoded with vowels
             punctuated.prefix.into_owned()
         } else {
@@ -315,16 +316,14 @@ fn expand_word(dict: &Dict, word: EncodedWord) -> Result<String, WordResolveErro
             match dict.resolve(&lowercase_word, word.leading_spaces)? {
                 None => {
                     // the fingerprint is not in the dictionary
-                    lowercase_word
+                    punctuated.prefix.into_owned()
                 }
                 Some(resolved) => {
                     // resolved a word from the dictionary
-                    resolved.clone()
+                    restore_capitalisation(resolved.clone(), leading_capital, nonleading_capital)
                 }
             }
-        };
-
-        restore_capitalisation(resolved_lowercase, leading_capital, nonleading_capital)
+        }
     };
 
     Ok(recapitalised_prefix + &punctuated.suffix)
