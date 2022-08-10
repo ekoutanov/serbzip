@@ -18,6 +18,8 @@ pub fn print(logo: &str, colours: &[&str]) {
         if !line.trim().is_empty() {
             let foreground = colours.next().unwrap();
             eprintln!("{foreground}{line}{reset}", reset = RESET);
+        } else {
+            eprintln!()
         }
     }
 }

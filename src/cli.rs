@@ -107,10 +107,15 @@ impl Args {
         }
     }
 
+    //    eprintln!("Enter text; CTRL+D when done.");
+    //Ok(Box::new(io::stdin()))
     fn input_reader(&self) -> Result<Box<dyn Read>, AppError> {
         self.input_file
             .as_ref()
-            .map_or(Ok(Box::new(io::stdin())), |path| {
+            .map_or_else(|| {
+                eprintln!("Enter text; CTRL+D when done.");
+                Ok(Box::new(io::stdin()) as Box<dyn Read>)
+            }, |path| {
                 let path = Path::new(&path);
                 if path.exists() {
                     Ok(Box::new(File::open(path)?))
