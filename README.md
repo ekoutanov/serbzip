@@ -36,7 +36,7 @@ This brings up `serb.zip`, running the `balkanoid` codec, in interactive mode.
 Enter text; CTRL+D when done.
 ```
 
-Let's key in the first verse of Mearns' "Antigonish". Enter the following text, line by line, and hit CTRL+D when done.
+Let's key in the first verse of Mearns' _Antigonish_. Enter the following text, line by line, and hit CTRL+D when done.
 
 ```
 Yesterday, upon the stair,
@@ -83,7 +83,7 @@ To compile `custom.txt` into `custom.blk`:
 serbzip -p -d custom.txt -m custom.blk
 ```
 
-To later use `custom.blk` during compression/expansion:
+To later use `custom.blk` during compression and expansion:
 
 ```sh
 serbzip -d custom.blk ...
@@ -153,7 +153,7 @@ The **compaction rules** are used to de-vowel the word, being the essence of the
 2. Convert the word-prefix to lowercase and generate its fingerprint. Resolve the (0-based) position of the lowercased prefix in the vector of strings mapped from the fingerprint. If the word-prefix is in the dictionary, then encode it by padding the output with a string of whitespace characters — the length of the string equal to the position of the prefix in the vector — then output the fingerprint. E.g., assume the word-prefix `"no"` is positioned second in the dictionary mapping for its fingerprint: `"n" -> ["in", "no", "on"]`. It would then be encoded as `"␣n"` — one space followed by its fingerprint. The word `"on"` would have required two spaces — `"␣␣n"`.
 3. Otherwise, if the word-prefix is not in the dictionary and contains one or more vowels, it is encoded as-is. E.g., the word-prefix `"tea"`, which is not in our sample dictionary, but contains a vowel, is encoded as `"tea"`.
 4. Otherwise, if the word-prefix comprises only consonants and its fingerprint does not appear in the dictionary, it is encoded as-is. E.g., the word-prefix `"psst"` is not mapped, so it is encoded with no change — `"psst"`. This case is much more frequent in East-Slavic than it is in English; in the latter, words comprising only consonants are either abbreviations, acronyms or representations of sounds.
-5. Otherwise, prepend a backslash (`'\'`) to the word-prefix. E.g., the word-prefix `"cnt"`, comprising all-consonants, having no resolvable position in `"cnt" -> ["cent", "count"]` for an existing fingerprint `"cnt"`, is encoded as `"\cnt"`. Without this rule, `"cnt"` with no leading spaces might be reversed into `"cent"`... or something entirely different and less fortunate.
+5. Otherwise, prepend a backslash (`'\'`) to the word-prefix. E.g., the word-prefix `"cnt"`, comprising all-consonants, having no resolvable position in `"cnt" -> ["cent", "count"]` for an existing fingerprint `"cnt"`, is encoded as `"\cnt"`. Without this rule, `"cnt"` with no leading spaces might be reversed into `"cent"`... or something entirely different and less appropriate.
 
 The **capitalisation** rules encode capitalisation _hints_ into the output so that the word-prefix may have its capitalisation restored. These rules is not perfectly reversible, but cope well in the overwhelming majority of cases.
 
@@ -249,6 +249,17 @@ When encoding words in English, provided both the singular and plural forms of a
 
 # FAQ
 ### Does `serb.zip` work?
-`serb.zip` (namely, the Balkanoid codec) was tested on numerous texts, including such literary works as Tolstoy's _War and Peace_ and Koutanov's _Effective Kafka_, and was found to correctly compress and expand each word in every case. A total of 27 texts spanning over 4 million words were assessed. Some even included typesetting commands. `serb.zip` works.
+`serb.zip` (namely, the Balkanoid codec) was tested on numerous texts, including such literary masterpieces as _War and Peace_ and _Effective Kafka_, and was found to correctly compress and expand each word in every case. A total of 27 texts spanning over 4 million words were assessed. Some even included typesetting commands. `serb.zip` works.
 
 ### What are its limitations?
+The caveats and limitations are explained in the [How `serb.zip` works](#how-serbzip-works) section. In summary:
+
+* Contiguous spaces between words, as well as leading and trailing spaces will not be restored.
+* Some mixed case words will not have their capitalisation restored correctly.
+* Some acronyms containing one consonant will not be restored correctly.
+* The algorithm requires that the same dictionary is used for compression and expansion. It cannot detect if a dictionary has changed between runs. In many cases it will produce a legible expansion, albeit the output may not correspond to the original.
+
+In every other respect, Balkanoid is a fully restorable codec. In other words, compressed output will accurately reflect the original input upon expansion. The limitations above are, by and large, immaterial — they do not affect comprehension.
+
+### What is the difference between `serb.zip` and Balkanoid?
+`serb.zip` is a framework for developing, testing and executing codecs that map from one lexical form to another. Balkanoid is an implementation of a codec. When running the `serbzip` command without specifying a codec, Balkanoid will be used by default.
