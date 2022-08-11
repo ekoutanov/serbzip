@@ -13,7 +13,7 @@ jobs:
         with:
           toolchain: nightly
       - run: rustup default stable
-      - run: rustup test -- --include-ignored
+      - run: cargo test -- --include-ignored
       - run: bin/test-compression.sh
       - run: cargo clean
       - run: rustup default nightly
