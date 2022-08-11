@@ -1,12 +1,13 @@
 use crate::cli::app_error::{AppError, CliError, CliErrorKind};
 use crate::cli::banner::{BLUE, RED, YELLOW};
-use crate::cli::{banner, Args, Mode, compress_helper, expand_helper};
+use crate::cli::{banner, compress_helper, expand_helper, Args, Mode};
 use serbzip::codecs::armenoid::Armenoid;
 use serbzip::succinct::CowStr;
 
 pub(super) fn run(args: &Args) -> Result<(), AppError> {
-    banner::print(
-        r#"
+    if !args.quiet() {
+        banner::print(
+            r#"
 
  █████╗ ██████╗ ███╗   ███╗███████╗███╗   ██╗ ██████╗ ██╗██████╗
 ██╔══██╗██╔══██╗████╗ ████║██╔════╝████╗  ██║██╔═══██╗██║██╔══██╗
@@ -16,8 +17,9 @@ pub(super) fn run(args: &Args) -> Result<(), AppError> {
 ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝╚═════╝
 
     "#,
-        &[RED, RED, BLUE, BLUE, YELLOW, YELLOW],
-    );
+            &[RED, RED, BLUE, BLUE, YELLOW, YELLOW],
+        );
+    };
 
     match args.mode()? {
         Mode::Compress => compress_helper(args, &Armenoid::default()),

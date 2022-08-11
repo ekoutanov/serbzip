@@ -77,6 +77,10 @@ struct Args {
     /// Codec implementation (defaults to balkanoid)
     #[clap(long, value_parser)]
     codec: Option<CodecImpl>,
+
+    /// Suppress unnecessary output
+    #[clap(short, long, value_parser)]
+    quiet: bool,
 }
 
 #[derive(Debug)]
@@ -113,7 +117,7 @@ impl Args {
         self.input_file
             .as_ref()
             .map_or_else(|| {
-                eprintln!("Enter text; CTRL+D when done.");
+                if !self.quiet() { eprintln!("Enter text; CTRL+D when done."); }
                 Ok(Box::new(io::stdin()) as Box<dyn Read>)
             }, |path| {
                 let path = Path::new(&path);
@@ -139,6 +143,8 @@ impl Args {
     fn dictionary_image_output_file(&self) -> &Option<String> {
         &self.dictionary_image_output_file
     }
+
+    fn quiet(&self) -> bool { self.quiet }
 }
 
 fn compress_helper(args: &Args, codec: &impl Codec) -> Result<(), AppError> {

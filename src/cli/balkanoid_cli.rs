@@ -16,8 +16,9 @@ const DEFAULT_DICT_TEXT_FILE: &str = "dict.txt";
 const DICT_URL: &str = "https://github.com/ekoutanov/serbzip/raw/master/dict.img";
 
 pub(super) fn run(args: &Args) -> Result<(), AppError> {
-    banner::print(
-        r#"
+    if !args.quiet {
+        banner::print(
+            r#"
 
 ██████╗  █████╗ ██╗     ██╗  ██╗ █████╗ ███╗   ██╗ ██████╗ ██╗██████╗
 ██╔══██╗██╔══██╗██║     ██║ ██╔╝██╔══██╗████╗  ██║██╔═══██╗██║██╔══██╗
@@ -27,8 +28,9 @@ pub(super) fn run(args: &Args) -> Result<(), AppError> {
 ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝╚═════╝
 
     "#,
-        &[RED, RED, BLUE, BLUE, WHITE, WHITE],
-    );
+            &[RED, RED, BLUE, BLUE, WHITE, WHITE],
+        );
+    }
 
     // read the dictionary from either the user-supplied or default path
     let dict = {
@@ -67,10 +69,12 @@ pub(super) fn run(args: &Args) -> Result<(), AppError> {
                             ),
                         )));
                     }
-                    eprintln!(
-                        "Writing compiled dictionary image to {image_output_file} ({words} words)",
-                        words = dict.count()
-                    );
+                    if !args.quiet() {
+                        eprintln!(
+                            "Writing compiled dictionary image to {image_output_file} ({words} words)",
+                            words = dict.count()
+                        );
+                    }
                     let mut writer = BufWriter::new(File::create(image_output_file)?);
                     dict.write_to_binary_image(&mut writer)?;
                     writer.flush()?;
@@ -103,9 +107,9 @@ impl Args {
                                 if home_img_path.exists() {
                                     Ok(home_img_path)
                                 } else {
-                                    eprintln!("Downloading dictionary file to {home_img_path:?}");
+                                    if !self.quiet() { eprintln!("Downloading dictionary file to {home_img_path:?}"); }
                                     downloader::download_to_file(DICT_URL, home_img_path.clone())?;
-                                    eprintln!("Download complete");
+                                    if !self.quiet() { eprintln!("Download complete"); }
                                     Ok(home_img_path)
                                 }
                             }
