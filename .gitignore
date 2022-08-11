@@ -5,3 +5,7 @@
 encoded.txt
 decoded.txt
 *.sz
+ccov.zip
+default.profraw
+lcov.info
+coverage

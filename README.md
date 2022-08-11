@@ -4,7 +4,6 @@ A quasi-lossless Balkanoidal meta-lingual compressor.
 
 [![Crates.io](https://img.shields.io/crates/v/serbzip?style=flat-square)](https://crates.io/crates/serbzip)
 [![Build Status](https://img.shields.io/github/workflow/status/ekoutanov/serbzip/Cargo%20build?style=flat-square)](https://github.com/ekoutanov/serbzip/actions/workflows/master.yml)
-[![Coverage Status](https://img.shields.io/coveralls/github/ekoutanov/serbzip/master?style=flat-square)](https://coveralls.io/github/ekoutanov/serbzip?branch=master)
 
 # Background
 It has long been accepted that Serbian is a compact variant of Russian, with less liberal use of vowels. Since the forfeiting of the Riviera in 1991, the loss of tourism revenue has led to further austerity in vowel use.
