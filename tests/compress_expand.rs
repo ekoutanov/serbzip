@@ -10,16 +10,21 @@ use std::path::{Path, PathBuf};
 fn compress_and_expand_small_docs() {
     let dict = read_default_dict();
     test_compress_and_expand(&dict, "test_data/alice_in_wonderland.txt");
+    test_compress_and_expand(&dict, "test_data/a_dream_within_a_dream.txt");
     test_compress_and_expand(&dict, "test_data/antigonish.txt");
     test_compress_and_expand(&dict, "test_data/calculus_made_easy.txt");
     test_compress_and_expand(&dict, "test_data/dracula.txt");
     test_compress_and_expand(&dict, "test_data/effective_kafka.txt");
     test_compress_and_expand(&dict, "test_data/frankenstein.txt");
     test_compress_and_expand(&dict, "test_data/metamorphosis.txt");
+    test_compress_and_expand(&dict, "test_data/lyublyu_tebya.txt");
+    test_compress_and_expand(&dict, "test_data/no_man_is_an_island.txt");
+    test_compress_and_expand(&dict, "test_data/odnazhdy.txt");
     test_compress_and_expand(&dict, "test_data/pride_and_prejudice.txt");
     test_compress_and_expand(&dict, "test_data/sherlock_holmes.txt");
     test_compress_and_expand(&dict, "test_data/the_prince.txt");
     test_compress_and_expand(&dict, "test_data/the_raven.txt");
+    test_compress_and_expand(&dict, "test_data/u_lukomorya.txt");
 }
 
 #[test]

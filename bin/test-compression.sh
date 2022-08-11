@@ -64,6 +64,7 @@ for file in $(ls -Sr $test_data_dir | grep -v "dict"); do
 
   # clean up
   rm ${temp_dir}/${file}."sz"
+  rm ${temp_dir}/${file}
 
   echo "|"
 done

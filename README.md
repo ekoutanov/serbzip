@@ -191,10 +191,20 @@ The problematic mixed-case scenario almost never occurs in practice because acro
 `"Ra"` (the sun god of ancient Egypt) is encoded to `"Ra"`, given a dictionary mapping `"r" -> ["ra", ...]`. Capitalisation is correctly reversed. However, if the input is the acronym `"RA"`, it will also be encoded to `"Ra"` — capitalisation will not be reversible in this case. Again, if `"ra"` is not in the dictionary, the word will be encoded verbatim and capitalisation will be reversible.
 
 # Compression Efficacy
+`serb.zip` is interesting from a linguistic standpoint, but does it actually _compress_?
 
+The table below shows the result of compressing a series of literary works using the Balkanoid codec. The works ranged in size from a few hundred kilobytes to several megabytes. For each text, the size of the `serb.zip` output is displayed, along with a percent reduction relative to the original size. (Negative values indicate that the size increased relative to the original.)
+
+Both the original text and its "serb-zipped" variant were subsequently subjected to `gzip` and `bzip2` binary compression on the `--best` setting. It was instructive to observe whether binary post-compression altered the result. The sizes were recorded, along with the reduction factor.
+
+The complete test set was split into two: English texts and Russian texts. The English test set was much larger — 21 works versus 5.
+
+## English texts
 |filename                      |size      |words     |gzip size |bzip2 size|sz size   |sz reduction %|sz.gz size  |sz+gz reduction %|sz.bz2 size |sz+bz2 reduction %|
 |------------------------------|----------|----------|----------|----------|----------|--------------|------------|-----------------|------------|------------------|
+|       no_man_is_an_island.txt|       396|        81|       289|       283|       366|          7.57|         258|            10.72|         261|              7.77|
 |                antigonish.txt|       478|        97|       282|       293|       552|        -15.48|         263|             6.73|         269|              8.19|
+|    a_dream_within_a_dream.txt|       652|       141|       414|       404|       648|           .61|         381|             7.97|         374|              7.42|
 |                 the_raven.txt|      6587|      1068|      2753|      2610|      6250|          5.11|        2513|             8.71|        2440|              6.51|
 |             metamorphosis.txt|    142017|     25094|     51125|     41494|    135843|          4.34|       47295|             7.49|       40236|              3.03|
 |       alice_in_wonderland.txt|    174313|     29594|     61021|     49027|    167360|          3.98|       57207|             6.25|       48216|              1.65|
@@ -212,9 +222,33 @@ The problematic mixed-case scenario almost never occurs in practice because acro
 |                    mormon.txt|   1588965|    293164|    453627|    313667|   1528402|          3.81|      425963|             6.09|      313170|               .15|
 |         anna_karenina_eng.txt|   2068079|    352857|    743362|    535118|   1958820|          5.28|      694156|             6.61|      529153|              1.11|
 |     count_of_monte_cristo.txt|   2786940|    464031|   1012102|    724410|   2600665|          6.68|      939973|             7.12|      714182|              1.41|
-|         anna_karenina_rus.txt|   3072666|    288389|    802824|    520413|   3319009|         -8.01|      841072|            -4.76|      528303|             -1.51|
 |         war_and_peace_eng.txt|   3359372|    566334|   1221693|    888312|   3120825|          7.10|     1134553|             7.13|      880502|               .87|
+
+Within the English test set, the size reduction using `serb.zip` alone was substantial in most cases. The greatest reduction was seen in _Pride and Prejudice_ — 15.93%, followed by 13.11% in _The Memoirs of Sherlock Holmes_. In most cases, the size reduction was in the single-digit percentages. _A Dream Within a Dream_ showed almost no difference in size, with reduction of just .61%.
+
+However, in one case — _Antigonish_ — the output size increased by 15.48%.
+
+Applying `gzip` and `bzip2` was where things got really interesting. In every single case, the output size decreased substantially, compared to the equivalent binary compression run without `serb.zip`. For `gzip`, improvements ranged from 4.86% (_Calculus Made Easy_) to 10.72% (_No Man is an Island_). For `bzip2`, the smallest improvement was recorded for _Pride and Prejudice_, at .04%; the highest improvement was for Antigonish, at 8.19%. This is interesting because _Antigonish_ showed a poor result for `serb.zip` alone. However, it appears that although the file size increased, the information entropy decreased at a disproportionately greater rate. This helped binary compressors achieve a better overall result.
+
+## Russian texts
+|filename                      |size      |words     |gzip size |bzip2 size|sz size   |sz reduction %|sz.gz size  |sz+gz reduction %|sz.bz2 size |sz+bz2 reduction %|
+|------------------------------|----------|----------|----------|----------|----------|--------------|------------|-----------------|------------|------------------|
+|               u_lukomorya.txt|      1599|       169|       754|       609|      1528|          4.44|         744|             1.32|         620|             -1.80|
+|             lyublyu_tebya.txt|      2290|       205|      1032|       830|      2189|          4.41|        1022|              .96|         832|              -.24|
+|                  odnazhdy.txt|      2359|       237|      1031|       885|      2333|          1.10|        1047|            -1.55|         905|             -2.25|
+|         anna_karenina_rus.txt|   3072666|    288389|    802824|    520413|   3319009|         -8.01|      841072|            -4.76|      528303|             -1.51|
 |         war_and_peace_rus.txt|   5368089|    494556|   1436738|    935792|   5618619|         -4.66|     1490941|            -3.77|      955191|             -2.07|
 
+For the Russian test set, the result was very different. The size difference for the `serb.zip` run varied between 4.44% and -8.01%. The result failed to improve with the use of binary post-compression. Notably, _Анна Каренина_ and _Война и Мир_ showed the worst results across the board. They were also the largest works in the test set.
 
+It appears that Balkanoid is not particularly effective at compressing Russian texts. The following postulates a theory as to why.
 
+In (modern) English, a noun doesn’t have any other forms but singular and plural. In Russian, nouns are declined — a process called «склонение» (declension), which gives the words different endings, in singular and in plural in six cases: именительный падеж (nominative), родительный падеж (genitive), дательный падеж (dative), винительный падеж (accusative), творительный падеж (instrumental), and предложный падеж (prepositional). In addition, Russian has genders: masculine, feminine, and neuter.
+
+When encoding words in English, provided both the singular and plural forms of a word are in the dictionary, that word may be effectively compacted in every case. In Russian, words have numerous variations and the likelihood of locating a given word in the dictionary exactly as it appears in the input text is substantially lower. Dictionary-based compaction alone, in the absence of grammatical awareness, appears to be insufficient to achieve consistent and measurable compression gains — comparable to that observed with English texts.
+
+# FAQ
+### Does `serb.zip` work?
+`serb.zip` (namely, the Balkanoid codec) was tested on numerous texts, including such literary works as Tolstoy's _War and Peace_ and Koutanov's _Effective Kafka_, and was found to correctly compress and expand each word in every case. A total of 27 texts spanning over 4 million words were assessed. Some even included typesetting commands. `serb.zip` works.
+
+### What are its limitations?

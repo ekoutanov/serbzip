@@ -78,7 +78,7 @@ struct Args {
     #[clap(long, value_parser)]
     codec: Option<CodecImpl>,
 
-    /// Suppress unnecessary output
+    /// Suppress noncritical output
     #[clap(short, long, value_parser)]
     quiet: bool,
 }
