@@ -1,5 +1,11 @@
 #!/bin/bash
 set -e
+
+type bc >/dev/null 2>&1 || { echo >&2 "bc is not installed; aborting."; exit 1; }
+type gzip >/dev/null 2>&1 || { echo >&2 "gzip is not installed; aborting."; exit 1; }
+type bzip2 >/dev/null 2>&1 || { echo >&2 "bzip2 is not installed; aborting."; exit 1; }
+type cargo >/dev/null 2>&1 || { echo >&2 "cargo is not installed; aborting."; exit 1; }
+
 base_dir="$(dirname "$0")"
 test_data_dir=${base_dir}/../test_data
 
