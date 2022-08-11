@@ -12,11 +12,12 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: -- #--include-ignored
-      - run: bin/test-compression.sh
+      #- uses: actions-rs/cargo@v1
+      #  with:
+      #    command: test
+      #    args: -- #--include-ignored
+      #- run: bin/test-compression.sh
+      - run: cargo clean
       - run: rustup component add llvm-tools-preview
       - run: export RUSTFLAGS="-Cinstrument-coverage"
       - run: cargo build
