@@ -7,23 +7,11 @@ license = "MIT"
 description = "A quasi-lossless Balkanoidal meta-lingual compressor."
 repository = "https://github.com/ekoutanov/serbzip"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-bincode = "2.0.0-rc.1"
-
-# optional dependencies for the binary crate
-clap = { version = "3.2.16", features = ["derive"], optional = false }
-home = { version = "0.5.3", optional = false }
-reqwest = { version = "0.11", features = ["blocking"], optional = false }
-
+bincode = { version = "2.0.0-rc.1" }
+clap = { version = "3.2.16", features = ["derive"] }
+home = { version = "0.5.3" }
+reqwest = { version = "0.11", features = ["blocking"] }
 
 [dev-dependencies]
-rand = "0.8.5"
-
-#[features]
-#binary = ["dep:clap", "dep:home", "dep:reqwest"]
-#
-#[[bin]]
-#name = "serbzip"
-#required-features = ["binary"]
+rand = { version = "0.8.5" }
