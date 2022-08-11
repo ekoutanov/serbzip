@@ -6,6 +6,8 @@ use std::ops::Deref;
 
 use crate::succinct::{CowStr, Errorlike, Stringlike};
 
+// $coverage:ignore-start
+
 #[test]
 fn errorlike_from_owned() {
     let errorlike = Errorlike::<CowStr>::from_owned(String::from("test"));
@@ -76,3 +78,5 @@ fn str_slice_implements_stringlike() {
     let stringlike = "test";
     assert_eq!(String::from("test"), Stringlike::into_owned(stringlike));
 }
+
+// $coverage:ignore-end

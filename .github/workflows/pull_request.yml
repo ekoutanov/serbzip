@@ -16,4 +16,4 @@ jobs:
         with:
           command: test
           args: -- --include-ignored
-      - run: bin/test-compression.sh
+      - run: bin/compression-report.sh

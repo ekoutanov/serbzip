@@ -2,6 +2,8 @@ use crate::codecs::armenoid::Armenoid;
 use crate::codecs::Codec;
 use std::io::Cursor;
 
+// $coverage:ignore-start
+
 #[test]
 fn test_compress_without_error() {
     let mut r = Cursor::new("Artsakh is ours".as_bytes());
@@ -25,3 +27,5 @@ fn test_expand_without_error() {
         String::from_utf8(w.into_inner()).unwrap()
     );
 }
+
+// $coverage:ignore-end

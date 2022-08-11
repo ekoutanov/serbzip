@@ -3,6 +3,8 @@ use crate::succinct::Stringlike;
 use std::collections::HashMap;
 use std::io::{Cursor, Seek, SeekFrom};
 
+// $coverage:ignore-start
+
 #[test]
 fn populate_incremental() {
     let mut dict = Dict::default();
@@ -280,3 +282,5 @@ impl Dict {
 fn stringify<const N: usize>(strings: [&str; N]) -> Vec<String> {
     strings.iter().map(ToString::to_string).collect()
 }
+
+// $coverage:ignore-end

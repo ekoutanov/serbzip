@@ -5,6 +5,8 @@ use std::error::Error;
 use std::io;
 use std::io::{Cursor, ErrorKind};
 
+// $coverage:ignore-start
+
 #[test]
 fn transcode_error_conversion() {
     let error = TranscodeError::<()>::from(io::Error::new(ErrorKind::AddrInUse, "test"));
@@ -139,3 +141,5 @@ fn transcode_with_io_error() {
     let io_error = result.err().unwrap().into_io_error().unwrap();
     assert_eq!(ErrorKind::WriteZero, io_error.kind());
 }
+
+// $coverage:ignore-end

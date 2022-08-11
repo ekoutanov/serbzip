@@ -12,15 +12,12 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
-      - run: rustup default stable
-      - run: cargo test -- --include-ignored
-      - run: bin/test-compression.sh
-      - run: cargo clean
+#      - run: rustup default stable
+#      - run: cargo test -- --include-ignored
+#      - run: bin/compression-report.sh
+#      - run: cargo clean
       - run: rustup default nightly
       - run: rustup component add llvm-tools-preview
-      - run: CARGO_INCREMENTAL="0" RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort" cargo build
-      - run: CARGO_INCREMENTAL="0" RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort" LLVM_PROFILE_FILE="serbzip-%p-%m.profraw" cargo test
       - run: curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-x86_64-unknown-linux-gnu.tar.bz2 | tar jxf -
-      - run: zip -0 ccov.zip `find . \( -name "serbzip*.gc*" \) -print`
-      - run: ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o lcov.info
+      - run: PATH=$PATH:$(pwd) bin/coverage-report.sh
       - run: bash <(curl -s https://codecov.io/bash) -f lcov.info

@@ -1,5 +1,7 @@
 use super::*;
 
+// $coverage:ignore-start
+
 #[test]
 fn parse_line() {
     struct Case {
@@ -517,3 +519,5 @@ fn compaction_rule_implements_debug() {
     let formatted = format!("{:?}", CompactionRule::Conflict);
     assert_eq!("Conflict", formatted);
 }
+
+// $coverage:ignore-end

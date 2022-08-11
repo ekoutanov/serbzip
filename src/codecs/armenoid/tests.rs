@@ -1,6 +1,8 @@
 use crate::codecs::armenoid::Armenoid;
 use crate::codecs::Codec;
 
+// $coverage:ignore-start
+
 #[test]
 fn compress_line() {
     assert_eq!(
@@ -16,3 +18,5 @@ fn expand_line() {
         Armenoid::default().expand_line("inch inch inch")
     );
 }
+
+// $coverage:ignore-end
