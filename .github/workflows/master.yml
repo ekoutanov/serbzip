@@ -18,6 +18,7 @@ jobs:
       #    args: -- #--include-ignored
       #- run: bin/test-compression.sh
       - run: cargo clean
+      - run: rustup default nightly
       - run: rustup component add llvm-tools-preview
       - run: CARGO_INCREMENTAL="0" RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort" cargo build
       - run: CARGO_INCREMENTAL="0" RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort" LLVM_PROFILE_FILE="serbzip-%p-%m.profraw" cargo test
