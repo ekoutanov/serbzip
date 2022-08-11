@@ -136,7 +136,7 @@ the resulting dictionary is
 
 Once the dictionary is loaded, the algorithm works by iterating over the input, line by line. Each line is subsequently tokenised by whitespace, disregarding contiguous whitespace (shown here with `␣` characters for readability) sequences. E.g., the line `"To␣be...␣␣␣␣␣or␣␣␣␣␣not␣to␣be!"` is captured as six words: `["To", "be...", "or", "not", "to", "be!"]`. An empty line, or a line comprising only whitespace characters is tokenised to `[]`.
 
-Each resulting word is subject to three rule-sets — punctuation, compaction and capitalisation — applied in that order.
+Each resulting word is subject to three rulesets — punctuation, compaction and capitalisation — applied in that order.
 
 The **punctuation rules** are used to efficiently deal with punctuated words such as `"banana!"`. Normally, `"banana"` would be an easy dictionary lookup, but the exclamation mark is a fly in the ointment. Punctuation splits every word into a _prefix_ and a _suffix_. The prefix encompasses a contiguous string of alphabetical characters from the start of the word. The suffix contains all other characters.
 
@@ -149,10 +149,11 @@ When a word comprises multiple fragments separated by non-alphabetical character
 
 The **compaction rules** are used to de-vowel the word, being the essence of the algorithm. It starts by taking a lowercase representation of the prefix element of the punctuation tuple and removing all vowels (excluding `'y'` in the English variant). The compaction rule does not apply to the suffix element of the tuple — suffixes are encoded as-is. In practice, the suffix is much shorter than the prefix. The rule comprises four parts:
 
-1. Convert the word-prefix to lowercase and generate its fingerprint. Resolve the (0-based) position of the lowercased prefix in the vector of strings mapped from the fingerprint. If the word-prefix is in the dictionary, then encode it by padding the output with a string of whitespace characters — the length of the string equal to the position of the prefix in the vector — then output the fingerprint. E.g., assume the word-prefix `"no"` is positioned second in the dictionary mapping for its fingerprint: `"n" -> ["in", "no", "on"]`. It would then be encoded as `"␣n"` — one space followed by its fingerprint. The word `"on"` would have required two spaces — `"␣␣n"`.
-2. Otherwise, if the word-prefix is not in the dictionary and contains one or more vowels, it is encoded as-is. E.g., the word-prefix `"tea"`, which is not in our sample dictionary, but contains a vowel, is encoded as `"tea"`.
-3. Otherwise, if the word-prefix comprises only consonants and its fingerprint does not appear in the dictionary, it is encoded as-is. E.g., the word-prefix `"psst"` is not mapped, so it is encoded with no change — `"psst"`. This case is much more frequent in East-Slavic than it is in English; in the latter, words comprising only consonants are either abbreviations, acronyms or representations of sounds.
-4. Otherwise, prepend a backslash (`'\'`) to the word-prefix. E.g., the word-prefix `"cnt"`, comprising all-consonants, having no resolvable position in `"cnt" -> ["cent", "count"]` for an existing fingerprint `"cnt"`, is encoded as `"\cnt"`. Without this rule, `"cnt"` with no leading spaces might be reversed into `"cent"`... or something entirely different and less fortunate.
+1. If the word-prefix begins with a backslash (`'\'`), then treat it as an escape sequence. Prepend another backslash and return the word-prefix. E.g., `"\sum"` encodes to `"\\sum"`. This rule is mainly used for encoding papers containing typesetting commands, such as TeX.
+2. Convert the word-prefix to lowercase and generate its fingerprint. Resolve the (0-based) position of the lowercased prefix in the vector of strings mapped from the fingerprint. If the word-prefix is in the dictionary, then encode it by padding the output with a string of whitespace characters — the length of the string equal to the position of the prefix in the vector — then output the fingerprint. E.g., assume the word-prefix `"no"` is positioned second in the dictionary mapping for its fingerprint: `"n" -> ["in", "no", "on"]`. It would then be encoded as `"␣n"` — one space followed by its fingerprint. The word `"on"` would have required two spaces — `"␣␣n"`.
+3. Otherwise, if the word-prefix is not in the dictionary and contains one or more vowels, it is encoded as-is. E.g., the word-prefix `"tea"`, which is not in our sample dictionary, but contains a vowel, is encoded as `"tea"`.
+4. Otherwise, if the word-prefix comprises only consonants and its fingerprint does not appear in the dictionary, it is encoded as-is. E.g., the word-prefix `"psst"` is not mapped, so it is encoded with no change — `"psst"`. This case is much more frequent in East-Slavic than it is in English; in the latter, words comprising only consonants are either abbreviations, acronyms or representations of sounds.
+5. Otherwise, prepend a backslash (`'\'`) to the word-prefix. E.g., the word-prefix `"cnt"`, comprising all-consonants, having no resolvable position in `"cnt" -> ["cent", "count"]` for an existing fingerprint `"cnt"`, is encoded as `"\cnt"`. Without this rule, `"cnt"` with no leading spaces might be reversed into `"cent"`... or something entirely different and less fortunate.
 
 The **capitalisation** rules encode capitalisation _hints_ into the output so that the word-prefix may have its capitalisation restored. These rules is not perfectly reversible, but cope well in the overwhelming majority of cases.
 
@@ -164,14 +165,56 @@ The encoded output of each prefix is subsequently combined with the suffix to fo
 
 Once the encoded outputs of each word have been derived, the resulting line is obtained by concatenating all outputs, using a single whitespace character to join successive pairs. The outputs from our earlier examples — `["␣n", "tea", "psst", "\cnt"]` are combined into the string `"␣n␣tea␣psst␣\cnt"`.
 
-Like compression, expansion starts by tokenising each line. Only in the case of expansion, contiguous whitespace sequences are not discarded — we need their count to decode the output of _compaction rule 1_. This is the _unary encoding_ part of the algorithm. One might think of it as the reverse of _run-length encoding_.
+Like compression, expansion begins by tokenising each line. Only in the case of expansion, contiguous whitespace sequences are not discarded — their count is needed to decode the output of _compaction rule 1_. This is the _unary encoding_ part of the algorithm. One might think of it as the reverse of _run-length encoding_.
 
 For each tokenised word, we apply the punctuation rules first, followed by reverse-compaction, then by capitalisation.
 
 Punctuation here is the same as before. The word is split into a punctuation tuple. The prefix is decoded, while the suffix is carried as-is.
 
-The **reverse-compaction** rule
+The **reverse-compaction** rule acts as follows:
 
-In **reverse-compaction**, we
+1. If the word-prefix begins with a backslash, then it is removed and the remaining substring is returned. E.g., the encoded word-prefix `"\trouble"` is decoded to `"trouble"`. A single backslash `"\"` decodes to an empty string. This rule reverses the output of both rule 1 and rule 5 of the compaction ruleset.
+2. Otherwise, the lowercased version of the word-prefix is checked for vowels. If at least one vowel is found, the lowercased string is returned. E.g., the word-prefix `"german"` is passed through.
+3. Otherwise, if the lowercased word-prefix comprises of only consonants, it is considered to be a fingerprint. It is resolved in the dictionary by looking up the word at the position specified by the number of leading spaces. If the fingerprint is present in the dictionary, it should always be possible to locate the original word. (The exception is when two different dictionaries were used, which is treated as an error.) E.g., given the mapping `"n" -> ["in", "no", "on"]`, the encoded word-prefix `"␣␣n"` decodes to `"on"`.
+4. Otherwise, if the fingerprint is not in the dictionary, return the word as-is. E.g., `"kgb"` is passed through if there is no mapping for its fingerprint in the dictionary.
+
+After reverse-compaction, the capitalisation rule is applied as per the compression path. Capitalisation is mostly reversible — it works well for words that begin with capitals or contain only capitals, such as acronyms. However, it cannot always reverse mixed-case words and words that reduce to a single consonant. Consider some examples.
+
+`"Apple"` encodes to `"Ppl`, given a dictionary containing `"ppl" -> ["apple", ...]`. It correctly decodes back to `"Apple"`.
+
+`"KGB"` encodes to `"KGB"`, given no dictionary mapping for the fingerprint `"kgb"`, and decodes correctly.
+
+`"LaTeX"` encodes to `"LTX"`, assuming it exists in the dictionary. It decodes to `"LATEX"`, incorrectly capitalising some letters. This is an example of the mixed-case problem. However, if the word is absent from the dictionary, it will be encoded as-is, and will have its capitalisation restored correctly.
+
+The problematic mixed-case scenario almost never occurs in practice because acronyms are generally absent from dictionaries; such words are rarely subjected to compaction — they're encoded verbatim.
+
+`"Ra"` (the sun god of ancient Egypt) is encoded to `"Ra"`, given a dictionary mapping `"r" -> ["ra", ...]`. Capitalisation is correctly reversed. However, if the input is the acronym `"RA"`, it will also be encoded to `"Ra"` — capitalisation will not be reversible in this case. Again, if `"ra"` is not in the dictionary, the word will be encoded verbatim and capitalisation will be reversible.
+
+# Compression Efficacy
+
+|filename                      |size      |words     |gzip size |bzip2 size|sz size   |sz reduction %|sz.gz size  |sz+gz reduction %|sz.bz2 size |sz+bz2 reduction %|
+|------------------------------|----------|----------|----------|----------|----------|--------------|------------|-----------------|------------|------------------|
+|                antigonish.txt|       478|        97|       282|       293|       552|        -15.48|         263|             6.73|         269|              8.19|
+|                 the_raven.txt|      6587|      1068|      2753|      2610|      6250|          5.11|        2513|             8.71|        2440|              6.51|
+|             metamorphosis.txt|    142017|     25094|     51125|     41494|    135843|          4.34|       47295|             7.49|       40236|              3.03|
+|       alice_in_wonderland.txt|    174313|     29594|     61021|     49027|    167360|          3.98|       57207|             6.25|       48216|              1.65|
+|                the_prince.txt|    307808|     52982|    112051|     86353|    284168|          7.68|      103035|             8.04|       84642|              1.98|
+|        calculus_made_easy.txt|    404533|     56128|    128753|    103437|    376411|          6.95|      122490|             4.86|      102025|              1.36|
+|              frankenstein.txt|    448821|     78122|    168673|    126241|    408328|          9.02|      154384|             8.47|      123996|              1.77|
+|           sherlock_holmes.txt|    612668|     98533|    212198|    153006|    532337|         13.11|      192828|             9.12|      151134|              1.22|
+|       pride_and_prejudice.txt|    798774|    124753|    267241|    182367|    671468|         15.93|      241914|             9.47|      182294|               .04|
+|           effective_kafka.txt|    832006|    121588|    260631|    186466|    740534|         10.99|      244580|             6.15|      185031|               .76|
+|                   dracula.txt|    881217|    164382|    335208|    245421|    855606|          2.90|      315240|             5.95|      244016|               .57|
+|             new_testament.txt|   1020010|    182644|    344546|    248323|    978194|          4.09|      326802|             5.14|      247227|               .44|
+|                 jane_eyre.txt|   1084733|    188452|    428029|    317669|   1028088|          5.22|      397902|             7.03|      311810|              1.84|
+|  crime_and_punishment_eng.txt|   1201520|    206553|    439388|    319534|   1161086|          3.36|      412300|             6.16|      315694|              1.20|
+|                 moby_dick.txt|   1276235|    215864|    511491|    389164|   1208689|          5.29|      476706|             6.80|      383487|              1.45|
+|                    mormon.txt|   1588965|    293164|    453627|    313667|   1528402|          3.81|      425963|             6.09|      313170|               .15|
+|         anna_karenina_eng.txt|   2068079|    352857|    743362|    535118|   1958820|          5.28|      694156|             6.61|      529153|              1.11|
+|     count_of_monte_cristo.txt|   2786940|    464031|   1012102|    724410|   2600665|          6.68|      939973|             7.12|      714182|              1.41|
+|         anna_karenina_rus.txt|   3072666|    288389|    802824|    520413|   3319009|         -8.01|      841072|            -4.76|      528303|             -1.51|
+|         war_and_peace_eng.txt|   3359372|    566334|   1221693|    888312|   3120825|          7.10|     1134553|             7.13|      880502|               .87|
+|         war_and_peace_rus.txt|   5368089|    494556|   1436738|    935792|   5618619|         -4.66|     1490941|            -3.77|      955191|             -2.07|
+
 
 

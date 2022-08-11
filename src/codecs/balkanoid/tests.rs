@@ -157,6 +157,14 @@ fn punctuate_word() {
             expect: ("\\", ""),
         },
         Case {
+            input: "\\\\",
+            expect: ("\\", "\\"),
+        },
+        Case {
+            input: "\\def\\",
+            expect: ("\\def", "\\"),
+        },
+        Case {
             input: "яблоко",
             expect: ("яблоко", ""),
         },
@@ -346,13 +354,13 @@ fn compress_expand_word() {
         Case {
             input_dict: vec![""],
             input_word: "\\",
-            expect_encoded: (0, "\\"),
+            expect_encoded: (0, "\\\\"),
             expect_proper_capitalisation: true
         },
         Case {
             input_dict: vec![""],
             input_word: "\\\\",
-            expect_encoded: (0, "\\\\"),
+            expect_encoded: (0, "\\\\\\"),
             expect_proper_capitalisation: true
         },
         Case {
@@ -389,6 +397,12 @@ fn compress_expand_word() {
             input_dict: vec![""],
             input_word: "уж",
             expect_encoded: (0, "уж"),
+            expect_proper_capitalisation: true
+        },
+        Case {
+            input_dict: vec![],
+            input_word: "\\def\\ebook{33283}",
+            expect_encoded: (0, "\\\\def\\ebook{33283}"),
             expect_proper_capitalisation: true
         },
     ] {

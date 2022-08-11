@@ -9,9 +9,16 @@ use std::path::{Path, PathBuf};
 #[test]
 fn compress_and_expand_small_docs() {
     let dict = read_default_dict();
+    test_compress_and_expand(&dict, "test_data/alice_in_wonderland.txt");
     test_compress_and_expand(&dict, "test_data/antigonish.txt");
+    test_compress_and_expand(&dict, "test_data/calculus_made_easy.txt");
+    test_compress_and_expand(&dict, "test_data/dracula.txt");
     test_compress_and_expand(&dict, "test_data/effective_kafka.txt");
+    test_compress_and_expand(&dict, "test_data/frankenstein.txt");
+    test_compress_and_expand(&dict, "test_data/metamorphosis.txt");
+    test_compress_and_expand(&dict, "test_data/pride_and_prejudice.txt");
     test_compress_and_expand(&dict, "test_data/sherlock_holmes.txt");
+    test_compress_and_expand(&dict, "test_data/the_prince.txt");
     test_compress_and_expand(&dict, "test_data/the_raven.txt");
 }
 
@@ -21,6 +28,9 @@ fn compress_and_expand_large_docs() {
     let dict = read_default_dict();
     test_compress_and_expand(&dict, "test_data/anna_karenina_eng.txt");
     test_compress_and_expand(&dict, "test_data/anna_karenina_rus.txt");
+    test_compress_and_expand(&dict, "test_data/count_of_monte_cristo.txt");
+    test_compress_and_expand(&dict, "test_data/crime_and_punishment_eng.txt");
+    test_compress_and_expand(&dict, "test_data/moby_dick.txt");
     test_compress_and_expand(&dict, "test_data/mormon.txt");
     test_compress_and_expand(&dict, "test_data/new_testament.txt");
     test_compress_and_expand(&dict, "test_data/jane_eyre.txt");

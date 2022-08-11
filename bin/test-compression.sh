@@ -5,15 +5,15 @@ test_data_dir=${base_dir}/../test_data
 
 temp_dir=${TMPDIR-/tmp}
 
-echo "|filename                 |size      |words     |gzip size |bzip2 size|sz size   |sz reduction %|sz.gz size  |sz+gz reduction %|sz.bz2 size |sz+bz2 reduction %|"
-echo "|-------------------------|----------|----------|----------|----------|----------|--------------|------------|-----------------|------------|------------------|"
+echo "|filename                      |size      |words     |gzip size |bzip2 size|sz size   |sz reduction %|sz.gz size  |sz+gz reduction %|sz.bz2 size |sz+bz2 reduction %|"
+echo "|------------------------------|----------|----------|----------|----------|----------|--------------|------------|-----------------|------------|------------------|"
 
-for file in $(ls $test_data_dir | grep -v "dict"); do
+for file in $(ls -Sr $test_data_dir | grep -v "dict"); do
   # basic file stats
   test_file=${test_data_dir}/$file
   raw_bytes=$(cat ${test_file} | wc -c)
   words=$(cat ${test_file} | wc -w)
-  echo -n "|$(printf %25s $file)|$(printf %10d $raw_bytes)|$(printf %10d $words)"
+  echo -n "|$(printf %30s $file)|$(printf %10d $raw_bytes)|$(printf %10d $words)"
 
   # compress with gzip
   cp $test_file $temp_dir
