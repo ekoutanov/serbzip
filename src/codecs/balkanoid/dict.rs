@@ -13,7 +13,7 @@ use std::io;
 use std::io::{Read, Write};
 
 /// The dictionary used by [`Balkanoid`](super::Balkanoid).
-#[derive(Default, Debug, bincode::Encode, bincode::Decode)]
+#[derive(Default, Debug, bincode::Encode, bincode::Decode, PartialEq, Eq)]
 pub struct Dict {
     entries: HashMap<String, Vec<String>>,
 }

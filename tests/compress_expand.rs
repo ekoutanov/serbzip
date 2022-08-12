@@ -1,10 +1,12 @@
-use rand::RngCore;
+mod common;
+
 use serbzip::codecs::balkanoid::{Balkanoid, Dict};
 use serbzip::codecs::Codec;
 use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter};
-use std::path::{Path, PathBuf};
+use std::path::{Path};
+use crate::common::generate_random_path;
 
 #[test]
 fn compress_and_expand_small_docs() {
@@ -127,10 +129,4 @@ fn test_compress_and_expand(dict: &Dict, original_file: &str) {
     }
 
     fs::remove_file(compressed_path).unwrap();
-}
-
-fn generate_random_path(extension: &str) -> PathBuf {
-    let path_buf = std::env::temp_dir();
-    let random = rand::thread_rng().next_u64();
-    path_buf.join(format!("test-{random:X}.{extension}"))
 }
