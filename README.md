@@ -2,9 +2,10 @@
 ===
 A quasi-lossless Balkanoidal meta-lingual compressor.
 
-[![Crates.io](https://img.shields.io/crates/v/serbzip?style=flat-square)](https://crates.io/crates/serbzip)
-[![Build Status](https://img.shields.io/github/workflow/status/ekoutanov/serbzip/Cargo%20build?style=flat-square)](https://github.com/ekoutanov/serbzip/actions/workflows/master.yml)
-[![codecov](https://img.shields.io/codecov/c/github/ekoutanov/serbzip/master?style=flat-square)](https://codecov.io/gh/ekoutanov/serbzip)
+[![Crates.io](https://img.shields.io/crates/v/serbzip?style=flat-square&logo=rust)](https://crates.io/crates/serbzip)
+[![docs.rs](https://img.shields.io/badge/docs.rs-serbzip-blue?style=flat-square&logo=docs.rs)](https://docs.rs/serbzip)
+[![Build Status](https://img.shields.io/github/workflow/status/ekoutanov/serbzip/Cargo%20build?style=flat-square&logo=github)](https://github.com/ekoutanov/serbzip/actions/workflows/master.yml)
+[![codecov](https://img.shields.io/codecov/c/github/ekoutanov/serbzip/master?style=flat-square&logo=codecov)](https://codecov.io/gh/ekoutanov/serbzip)
 
 # Background
 It has long been accepted that Serbian is a compact variant of Russian, with less liberal use of vowels. Since the forfeiting of the Riviera in 1991, the loss of tourism revenue has led to further austerity in vowel use.

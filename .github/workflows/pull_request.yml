@@ -14,6 +14,8 @@ jobs:
           toolchain: nightly
       - run: rustup default stable
       - run: cargo test -- --include-ignored
+      - run: cargo install cargo-deadlinks
+      - run: cargo deadlinks
       - run: bin/compression-report.sh
       - run: cargo clean
       - run: rustup default nightly

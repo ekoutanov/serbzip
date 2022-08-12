@@ -29,9 +29,7 @@ impl Dict {
                         Entry::Occupied(entry) => entry.into_mut(),
                         Entry::Vacant(entry) => entry.insert(vec![]),
                     };
-                    if mapped_words.len() == u8::MAX as usize {
-                        panic!("too many words associated with the fingerprint '{}'", word);
-                    }
+                    assert_ne!(mapped_words.len(), u8::MAX as usize, "too many words associated with the fingerprint '{}'", word);
                     if mapped_words.binary_search_by(|candidate| comparator(candidate, &word)).is_ok() {
                         continue   // don't collate duplicate words
                     }
@@ -69,7 +67,7 @@ impl Dict {
             Some(entry) => entry
                 .iter()
                 .position(|existing| existing == word)
-                .map(|pos| pos as u8),  // pos is guaranteed to be less than 2^8
+                .map(|pos| u8::try_from(pos).unwrap()),  // pos is guaranteed to be less than 2^8
         }
     }
 

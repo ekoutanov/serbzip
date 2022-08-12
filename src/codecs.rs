@@ -1,3 +1,6 @@
+//! # Codecs
+//!
+
 use crate::transcoder;
 use crate::transcoder::TranscodeError;
 use std::convert::Infallible;
