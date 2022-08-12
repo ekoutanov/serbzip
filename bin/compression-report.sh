@@ -11,9 +11,9 @@ test_data_dir=${base_dir}/../test_data
 
 temp_dir=${TMPDIR-/tmp}
 
-GREEN='\032[0;31m'
 RED='\033[0;31m'
-NC='\033[0m'
+GREEN='\033[0;32m'
+RESET='\033[0m'
 
 echo "|filename                      |size      |words     |gzip size |bzip2 size|sz size   |sz reduction %|sz.gz size  |sz+gz reduction %|sz.bz2 size |sz+bz2 reduction %|"
 echo "|------------------------------|----------|----------|----------|----------|----------|--------------|------------|-----------------|------------|------------------|"
@@ -48,12 +48,8 @@ for file in $(ls -Sr $test_data_dir | grep -v "dict"); do
 
   # calculate [raw]->[sz] size reduction
   sz_reduction=$(echo "scale=2; 100 * ($raw_bytes - $sz_bytes)/$raw_bytes" | bc)
-  if (( $(echo "$sz_reduction < 0" |bc -l) )); then
-    echo -n "${RED} something red"
-  else
-    echo -n $GREEN
-  fi
-  echo -n "|$(printf %14s ${sz_reduction})${RESET}"
+  if (( $(echo "$sz_reduction < 0" | bc -l) )); then echo -en "|$RED"; else echo -en "|$GREEN"; fi
+  echo -en "$(printf %14s ${sz_reduction})$RESET"
 
   # compress sz output with gzip
   rm ${temp_dir}/${file}."sz.gz" 2> /dev/null || true
@@ -64,7 +60,8 @@ for file in $(ls -Sr $test_data_dir | grep -v "dict"); do
 
   # calculate [raw.gz]->[sz.gz] size reduction
   sz_gzip_reduction=$(echo "scale=2; 100*($gzip_bytes - $sz_gzip_bytes)/$gzip_bytes" | bc)
-  echo -n "|$(printf %17s ${sz_gzip_reduction})"
+  if (( $(echo "$sz_gzip_reduction < 0" | bc -l) )); then echo -en "|$RED"; else echo -en "|$GREEN"; fi
+  echo -en "$(printf %17s ${sz_gzip_reduction})$RESET"
 
   # compress sz output with bzip2
   rm ${temp_dir}/${file}."sz.bz2" 2> /dev/null || true
@@ -75,7 +72,8 @@ for file in $(ls -Sr $test_data_dir | grep -v "dict"); do
 
   # calculate [raw.bz2]->[sz.bz2] size reduction
   sz_bzip2_reduction=$(echo "scale=2; 100*($bzip2_bytes - $sz_bzip2_bytes)/$bzip2_bytes" | bc)
-  echo -n "|$(printf %18s ${sz_bzip2_reduction})"
+  if (( $(echo "$sz_bzip2_reduction < 0" | bc -l) )); then echo -en "|$RED"; else echo -en "|$GREEN"; fi
+  echo -en "$(printf %18s ${sz_bzip2_reduction})$RESET"
 
   # clean up
   rm ${temp_dir}/${file}."sz"
