@@ -1,5 +1,4 @@
-//! # Codecs
-//!
+//! Machinery common to all codec implementations.
 
 use crate::transcoder;
 use crate::transcoder::TranscodeError;
@@ -12,11 +11,28 @@ use std::io::Write;
 pub mod armenoid;
 pub mod balkanoid;
 
+/// The specification of a codec.
+///
+/// Codecs work line by line. As such, they require two method implementations:
+/// [compress_line](Codec::compress_line) — to encode one line of input text, and
+/// [expand_line](Codec::expand_line) — to perform the reverse operation.
+///
+/// Compression is not allowed to return an error; the thinking is that all
+/// text should be compressible. Expansion, however, may return an error. It is possible
+/// that the output of compression may have been mangled with, in which case expansion
+/// is not possible.
 pub trait Codec {
+    /// The type of error returned during expansion.
     type ExpandError: Error;
 
+    /// Compresses a line of text, returning its encoded representation.
     fn compress_line(&self, line: &str) -> String;
 
+    /// Expands a line of text, returning its decoded representation.
+    ///
+    /// # Errors
+    /// Expansion is not always possible, in which case an [ExpandError](Self::ExpandError)
+    /// is returned.
     fn expand_line(&self, line: &str) -> Result<String, Self::ExpandError>;
 
     fn compress(&self, r: &mut impl BufRead, w: &mut impl Write) -> Result<(), io::Error> {

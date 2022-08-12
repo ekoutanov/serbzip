@@ -102,7 +102,7 @@ fn transcode_no_errors() {
     };
     let content = concat!("first\n", "second\n", "third\n");
     let mut r = Cursor::new(content.as_bytes());
-    let mut w = Cursor::new(Vec::<u8>::new());
+    let mut w = Cursor::new(Vec::new());
     let result = transcode(&mut r, &mut w, processor);
     assert!(result.is_ok());
     let output = String::from_utf8(w.into_inner()).unwrap();
@@ -120,7 +120,7 @@ fn transcode_with_processor_error() {
     };
     let content = concat!("first\n", "second\n", "third\n");
     let mut r = Cursor::new(content.as_bytes());
-    let mut w = Cursor::new(Vec::<u8>::new());
+    let mut w = Cursor::new(Vec::new());
     let result = transcode(&mut r, &mut w, processor);
     assert!(result.is_err());
     assert!(matches!(
