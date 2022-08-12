@@ -105,12 +105,12 @@ If you are using this application, you should probably seek professional help.
 If you get stuck, run `serbzip --help`.
 
 # How `serb.zip` Works
-Each codec works differently. They share some common concepts but the underlying algorithms may be totally different.
+Each codec works differently. They share some common concepts but the underlying algorithms may be entirely different.
 
 ## Balkanoid
 Balkanoid is the famed codec that started it all. It maps between compressed and expanded forms with _no loss in meaning_. It does this through a combination of _dictionary mapping_ and a _unary encoding_.
 
-Balkanoid's dictionary is a mapping from a **fingerprint** to a sorted vector of all dictionary words that satisfy that fingerprint. A fingerprint is taken by stripping all vowels and converting remaining characters to lowercase. E.g., the fingerprint of `"Apple"` is `"ppl"`.
+Balkanoid's dictionary is a mapping from a **fingerprint** to a sorted vector of all dictionary words that satisfy that fingerprint. A fingerprint is taken by stripping all vowels and converting the remaining characters to lowercase. E.g., the fingerprint of `"Apple"` is `"ppl"`.
 
 The dictionary is essentially a `HashMap<String, Vec<String>>`. The vector is sorted by comparing words by length (shortest first), then by lexicographical order.
 
@@ -139,7 +139,7 @@ the resulting dictionary is
 "nn" -> ["inn"]
 ```
 
-Once the dictionary is loaded, the algorithm works by iterating over the input, line by line. Each line is subsequently tokenised by whitespace, disregarding contiguous whitespace (shown here with `␣` characters for readability) sequences. E.g., the line `"To␣be...␣␣␣␣␣or␣␣␣␣␣not␣to␣be!"` is captured as six words: `["To", "be...", "or", "not", "to", "be!"]`. An empty line, or a line comprising only whitespace characters is tokenised to `[]`.
+Once the dictionary is loaded, the algorithm works by iterating over the input, line by line. Each line is subsequently tokenised by whitespace, disregarding contiguous whitespace (shown here with `␣` characters for readability) sequences. E.g., the line `"To␣be...␣␣␣␣␣or␣␣␣␣␣not␣to␣be!"` is captured as six words: `["To", "be...", "or", "not", "to", "be!"]`. An empty line or a line comprising only whitespace characters is tokenised to `[]`.
 
 Each resulting word is subject to three rulesets — punctuation, compaction and capitalisation — applied in that order.
 
@@ -150,12 +150,12 @@ The **punctuation rules** are used to efficiently deal with punctuated words suc
 
 For example, for `"bananas!!!"`, the punctuation tuple is `("bananas", "!!!")`, by rule 2. For an unpunctuated word, the prefix encompasses the entire word (again, by rule 2), while the suffix is an empty string; e.g., `"pear"` splits to `("pear", "")`. For a word such as `"\foo?"`, the punctuation tuple is `("\foo", "?")`, by rule 1 — the first backslash is admitted to the prefix. For a single backslash `"\"`, the result is `("\", "")`, as per rule 1. For a series of backslashes `"\\\"`, the result is `("\", "\\")`.
 
-When a word comprises multiple fragments separated by non-alphabetical characters, only the first fragment is assigned to the prefix; e.g., `"dog@pound.com"` becomes `("dog", "@pound.com")`. This a rare example of a relatively long suffix; ordinarily, suffixes comprise trailing punctuation symbols, which are prevalent in English and East-Slavic languages. Although one might think that multi-fragment words could be expressed as N-tuples and encoded accordingly, this would render the algorithm irreversible for some words.
+When a word comprises multiple fragments separated by non-alphabetical characters, only the first fragment is assigned to the prefix; e.g., `"dog@pound.com"` becomes `("dog", "@pound.com")`. This is a rare example of a relatively long suffix; ordinarily, suffixes comprise trailing punctuation symbols, which are prevalent in English and East-Slavic languages. Although one might think that multi-fragment words could be expressed as N-tuples and encoded accordingly, this would render the algorithm irreversible for some words.
 
 The **compaction rules** are used to de-vowel the word, being the essence of the algorithm. It starts by taking a lowercase representation of the prefix element of the punctuation tuple and removing all vowels (excluding `'y'` in the English variant). The compaction rule does not apply to the suffix element of the tuple — suffixes are encoded as-is. In practice, the suffix is much shorter than the prefix. The rule comprises four parts:
 
 1. If the word-prefix begins with a backslash (`'\'`), then treat it as an escape sequence. Prepend another backslash and return the word-prefix. E.g., `"\sum"` encodes to `"\\sum"`. This rule is mainly used for encoding papers containing typesetting commands, such as TeX.
-2. Convert the word-prefix to lowercase and generate its fingerprint. Resolve the (0-based) position of the lowercased prefix in the vector of strings mapped from the fingerprint. If the word-prefix is in the dictionary, then encode it by padding the output with a string of whitespace characters — the length of the string equal to the position of the prefix in the vector — then output the fingerprint. E.g., assume the word-prefix `"no"` is positioned second in the dictionary mapping for its fingerprint: `"n" -> ["in", "no", "on"]`. It would then be encoded as `"␣n"` — one space followed by its fingerprint. The word `"on"` would have required two spaces — `"␣␣n"`.
+2. Convert the word-prefix to lowercase and generate its fingerprint. Resolve the (0-based) position of the lowercase prefix in the vector of strings mapped from the fingerprint. If the word-prefix is in the dictionary, then encode it by padding the output with a string of whitespace characters — the length of the string equal to the position of the prefix in the vector — then output the fingerprint. E.g., assume the word-prefix `"no"` is positioned second in the dictionary mapping for its fingerprint: `"n" -> ["in", "no", "on"]`. It would then be encoded as `"␣n"` — one space followed by its fingerprint. The word `"on"` would have required two spaces — `"␣␣n"`.
 3. Otherwise, if the word-prefix is not in the dictionary and contains one or more vowels, it is encoded as-is. E.g., the word-prefix `"tea"`, which is not in our sample dictionary, but contains a vowel, is encoded as `"tea"`.
 4. Otherwise, if the word-prefix comprises only consonants and its fingerprint does not appear in the dictionary, it is encoded as-is. E.g., the word-prefix `"psst"` is not mapped, so it is encoded with no change — `"psst"`. This case is much more frequent in East-Slavic than it is in English; in the latter, words comprising only consonants are either abbreviations, acronyms or representations of sounds.
 5. Otherwise, prepend a backslash (`'\'`) to the word-prefix. E.g., the word-prefix `"cnt"`, comprising all-consonants, having no resolvable position in `"cnt" -> ["cent", "count"]` for an existing fingerprint `"cnt"`, is encoded as `"\cnt"`. Without this rule, `"cnt"` with no leading spaces might be reversed into `"cent"`... or something entirely different and less appropriate.
@@ -166,7 +166,7 @@ The **capitalisation** rules encode capitalisation _hints_ into the output so th
 2. Otherwise, if the input starts with the capital letter, capitalise only the first letter and append the remainder of the input.
 3. Otherwise, if the input has no capital letters, feed it through to the output unchanged.
 
-The encoded output of each prefix is subsequently combined with the suffix to form the complete encoded word.
+The encoded output of each prefix is subsequently combined with the suffix to form the complete, encoded word.
 
 Once the encoded outputs of each word have been derived, the resulting line is obtained by concatenating all outputs, using a single whitespace character to join successive pairs. The outputs from our earlier examples — `["␣n", "tea", "psst", "\cnt"]` are combined into the string `"␣n␣tea␣psst␣\cnt"`.
 
@@ -178,9 +178,9 @@ Punctuation here is the same as before. The word is split into a punctuation tup
 
 The **reverse-compaction** rule acts as follows:
 
-1. If the word-prefix begins with a backslash, then it is removed and the remaining substring is returned. E.g., the encoded word-prefix `"\trouble"` is decoded to `"trouble"`. A single backslash `"\"` decodes to an empty string. This rule reverses the output of both rule 1 and rule 5 of the compaction ruleset.
-2. Otherwise, the lowercased version of the word-prefix is checked for vowels. If at least one vowel is found, the lowercased string is returned. E.g., the word-prefix `"german"` is passed through.
-3. Otherwise, if the lowercased word-prefix comprises of only consonants, it is considered to be a fingerprint. It is resolved in the dictionary by looking up the word at the position specified by the number of leading spaces. If the fingerprint is present in the dictionary, it should always be possible to locate the original word. (The exception is when two different dictionaries were used, which is treated as an error.) E.g., given the mapping `"n" -> ["in", "no", "on"]`, the encoded word-prefix `"␣␣n"` decodes to `"on"`.
+1. If the word-prefix begins with a backslash, then it is removed, and the remaining substring is returned. E.g., the encoded word-prefix `"\trouble"` is decoded to `"trouble"`. A single backslash `"\"` decodes to an empty string. This rule reverses the output of both rule 1 and rule 5 of the compaction ruleset.
+2. Otherwise, the lowercase version of the word-prefix is checked for vowels. If at least one vowel is found, the lowercase string is returned. E.g., the word-prefix `"german"` is passed through.
+3. Otherwise, if the lowercase word-prefix comprises only consonants, it is considered to be a fingerprint. It is resolved in the dictionary by looking up the word at the position specified by the number of leading spaces. If the fingerprint is present in the dictionary, it should always be possible to locate the original word. (The exception is when two different dictionaries were used, which is treated as an error.) E.g., given the mapping `"n" -> ["in", "no", "on"]`, the encoded word-prefix `"␣␣n"` decodes to `"on"`.
 4. Otherwise, if the fingerprint is not in the dictionary, return the word as-is. E.g., `"kgb"` is passed through if there is no mapping for its fingerprint in the dictionary.
 
 After reverse-compaction, the capitalisation rule is applied as per the compression path. Capitalisation is mostly reversible — it works well for words that begin with capitals or contain only capitals, such as acronyms. However, it cannot always reverse mixed-case words and words that reduce to a single consonant. Consider some examples.
@@ -191,7 +191,7 @@ After reverse-compaction, the capitalisation rule is applied as per the compress
 
 `"LaTeX"` encodes to `"LTX"`, assuming it exists in the dictionary. It decodes to `"LATEX"`, incorrectly capitalising some letters. This is an example of the mixed-case problem. However, if the word is absent from the dictionary, it will be encoded as-is, and will have its capitalisation restored correctly.
 
-The problematic mixed-case scenario almost never occurs in practice because acronyms are generally absent from dictionaries; such words are rarely subjected to compaction — they're encoded verbatim.
+The problematic mixed-case scenario seldom occurs in practice because acronyms are generally absent from dictionaries; such words are rarely subjected to compaction — they're encoded verbatim.
 
 `"Ra"` (the sun god of ancient Egypt) is encoded to `"Ra"`, given a dictionary mapping `"r" -> ["ra", ...]`. Capitalisation is correctly reversed. However, if the input is the acronym `"RA"`, it will also be encoded to `"Ra"` — capitalisation will not be reversible in this case. Again, if `"ra"` is not in the dictionary, the word will be encoded verbatim and capitalisation will be reversible.
 
@@ -229,7 +229,7 @@ The complete test set was split into two: English texts and Russian texts. The E
 |     count_of_monte_cristo.txt|   2786940|    464031|   1012102|    724410|   2600665|          6.68 ![](https://via.placeholder.com/12/00ff00/00ff00.png)|      939973|             7.12 ![](https://via.placeholder.com/12/00ff00/00ff00.png)|      714182|              1.41 ![](https://via.placeholder.com/12/00ff00/00ff00.png)|
 |         war_and_peace_eng.txt|   3359372|    566334|   1221693|    888312|   3120825|          7.10 ![](https://via.placeholder.com/12/00ff00/00ff00.png)|     1134553|             7.13 ![](https://via.placeholder.com/12/00ff00/00ff00.png)|      880502|               .87 ![](https://via.placeholder.com/12/00ff00/00ff00.png)|
 
-Within the English test set, the size reduction using `serb.zip` alone was substantial in most cases. The greatest reduction was seen in _Pride and Prejudice_ — 15.93%, followed by 13.11% in _The Memoirs of Sherlock Holmes_. In most cases, the size reduction was in the single-digit percentages. _A Dream Within a Dream_ showed almost no difference in size, with reduction of just .61%.
+Within the English test set, the size reduction using `serb.zip` alone was substantial in most cases. The greatest reduction was seen in _Pride and Prejudice_ — 15.93%, followed by 13.11% in _The Memoirs of Sherlock Holmes_. In most cases, the size reduction was in the single-digit percentages. _A Dream Within a Dream_ showed almost no difference in size, with a reduction of just .61%.
 
 However, in one case — _Antigonish_ — the output size increased by 15.48%.
 
@@ -257,14 +257,21 @@ When encoding words in English, provided both the singular and plural forms of a
 `serb.zip` (namely, the Balkanoid codec) was tested on numerous texts, including such literary masterpieces as _War and Peace_ and _Effective Kafka_, and was found to correctly compress and expand each word in every case. A total of 27 texts spanning over 4 million words were assessed. Some even included typesetting commands. `serb.zip` works.
 
 ### What are its limitations?
-The caveats and limitations are explained in the [How `serb.zip` works](#how-serbzip-works) section. In summary:
+The caveats and limitations are explained in the [how `serb.zip` works](#how-serbzip-works) section. In summary:
 
 * Contiguous spaces between words, as well as leading and trailing spaces will not be restored.
 * Some mixed case words will not have their capitalisation restored correctly.
 * Some acronyms containing one consonant will not be restored correctly.
-* The algorithm requires that the same dictionary is used for compression and expansion. It cannot detect if a dictionary has changed between runs. In many cases it will produce a legible expansion, albeit the output may not correspond to the original.
+* The algorithm requires that the same dictionary is used for compression and expansion. It cannot detect if a dictionary has changed between runs. In many cases, this will produce a legible expansion, albeit the output may not correspond to the original.
 
-In every other respect, Balkanoid is a fully restorable codec. In other words, compressed output will accurately reflect the original input upon expansion. The limitations above are, by and large, immaterial — they do not affect comprehension.
+In every other respect, Balkanoid is a fully restorable codec. In other words, the compressed output can be accurately restored to match the original input upon expansion. The limitations above are, by and large, immaterial — they do not affect comprehension.
 
 ### What is the difference between `serb.zip` and Balkanoid?
 `serb.zip` is a framework for developing, testing and executing codecs that map from one lexical form to another. Balkanoid is an implementation of a codec. When running the `serbzip` command without specifying a codec, Balkanoid will be used by default.
+
+### I love this project. How can I contribute?
+If you're interested in this sort of piss-take, please, do join in.
+
+It would be nice to have more reversible, human-readable transformations. [Pig Latin](https://en.wikipedia.org/wiki/Pig_Latin) might be a good example. The current algorithm is simple but not reversible. Perhaps, with little alteration, one might make a fully reversible/lossless Pig Latin codec.
+
+`serb.zip` is highly modular; you can plug in your own `serbzip::codecs::Codec` implementation, and away you go.

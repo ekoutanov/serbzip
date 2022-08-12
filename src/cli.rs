@@ -46,11 +46,11 @@ impl FromStr for CodecImpl {
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
-    /// Compress
+    /// Compress/encode
     #[clap(short, long, value_parser)]
     compress: bool,
 
-    /// Expand
+    /// Expand/decode
     #[clap(short = 'x', long, value_parser)]
     expand: bool,
 
