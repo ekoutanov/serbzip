@@ -6,7 +6,6 @@ use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter};
 use std::path::{Path};
-use crate::common::generate_random_path;
 
 #[test]
 fn compress_and_expand_small_docs() {
@@ -57,8 +56,8 @@ fn read_default_dict() -> Dict {
 
 fn test_compress_and_expand(dict: &Dict, original_file: &str) {
     let original_path = Path::new(original_file);
-    let compressed_path = generate_random_path("sz");
-    let expanded_path = generate_random_path("txt");
+    let compressed_path = common::TempPath::with_extension("sz");
+    let expanded_path = common::TempPath::with_extension("txt");
     let codec = Balkanoid::new(dict);
 
     {
@@ -92,7 +91,6 @@ fn test_compress_and_expand(dict: &Dict, original_file: &str) {
             }
 
             let (src_line, tgt_line) = (&src_buf[0..src_bytes - 1], &tgt_buf[0..tgt_bytes - 1]);
-            //println!("source: '{source_line}', target: '{target_line}'");
             let mut src_words = src_line.split_whitespace();
             let mut tgt_words = tgt_line.split_whitespace();
 
@@ -127,6 +125,4 @@ fn test_compress_and_expand(dict: &Dict, original_file: &str) {
             line_no += 1;
         }
     }
-
-    fs::remove_file(compressed_path).unwrap();
 }
