@@ -11,6 +11,10 @@ test_data_dir=${base_dir}/../test_data
 
 temp_dir=${TMPDIR-/tmp}
 
+GREEN='\032[0;31m'
+RED='\033[0;31m'
+NC='\033[0m'
+
 echo "|filename                      |size      |words     |gzip size |bzip2 size|sz size   |sz reduction %|sz.gz size  |sz+gz reduction %|sz.bz2 size |sz+bz2 reduction %|"
 echo "|------------------------------|----------|----------|----------|----------|----------|--------------|------------|-----------------|------------|------------------|"
 
@@ -44,7 +48,12 @@ for file in $(ls -Sr $test_data_dir | grep -v "dict"); do
 
   # calculate [raw]->[sz] size reduction
   sz_reduction=$(echo "scale=2; 100 * ($raw_bytes - $sz_bytes)/$raw_bytes" | bc)
-  echo -n "|$(printf %14s ${sz_reduction})"
+  if (( $(echo "$sz_reduction < 0" |bc -l) )); then
+    echo -n "$REDsomething red"
+  else
+    echo -n $GREEN
+  fi
+  echo -n "|$(printf %14s ${sz_reduction})${RESET}"
 
   # compress sz output with gzip
   rm ${temp_dir}/${file}."sz.gz" 2> /dev/null || true
