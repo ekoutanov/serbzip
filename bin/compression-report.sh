@@ -49,7 +49,7 @@ for file in $(ls -Sr $test_data_dir | grep -v "dict"); do
   # calculate [raw]->[sz] size reduction
   sz_reduction=$(echo "scale=2; 100 * ($raw_bytes - $sz_bytes)/$raw_bytes" | bc)
   if (( $(echo "$sz_reduction < 0" |bc -l) )); then
-    echo -n "$REDsomething red"
+    echo -n "${RED} something red"
   else
     echo -n $GREEN
   fi
