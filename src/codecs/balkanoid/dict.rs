@@ -32,7 +32,7 @@ impl Dict {
                     if mapped_words.len() == u8::MAX as usize {
                         panic!("too many words associated with the fingerprint '{}'", word);
                     }
-                    if let Ok(_) = mapped_words.binary_search_by(|candidate| comparator(candidate, &word)) {
+                    if mapped_words.binary_search_by(|candidate| comparator(candidate, &word)).is_ok() {
                         continue   // don't collate duplicate words
                     }
                     mapped_words.push(word);
