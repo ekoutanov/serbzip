@@ -60,6 +60,10 @@ fn transcode_error_implements_debug() {
         "ConversionError { line_no: 10, error: Errorlike(\"test\") }",
         formatted
     );
+
+    let error = TranscodeError::<()>::IoError(io::Error::new(ErrorKind::AddrInUse, "test"));
+    let formatted = format!("{error:?}");
+    assert!(formatted.contains("IoError"));
 }
 
 #[test]
