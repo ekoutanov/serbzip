@@ -6,6 +6,7 @@ authors = ["Emil Koutanov"]
 license = "MIT"
 description = "A quasi-lossless Balkanoidal meta-lingual compressor."
 repository = "https://github.com/ekoutanov/serbzip"
+exclude = ["/test_data", "/logo", "/bin", "/.idea", "/.github"]
 
 [dependencies]
 bincode = { version = "2.0.0-rc.1" }
