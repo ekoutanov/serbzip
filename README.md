@@ -8,9 +8,9 @@ A quasi-lossless Balkanoidal meta-lingual compressor.
 [![codecov](https://img.shields.io/codecov/c/github/ekoutanov/serbzip/master?style=flat-square&logo=codecov)](https://codecov.io/gh/ekoutanov/serbzip)
 
 # Background
-It has long been accepted that Serbian is a compact variant of Russian, with less liberal use of vowels. Since the forfeiting of the Riviera in 1991, the loss of tourism revenue has led to further austerity in vowel use.
+It has long been accepted that Serbian is a compact variant of Russian, with less liberal use of vowels. Since the forfeiting of the Riviera in 1991, the loss of tourism revenue has led to further austerity in vowel use. Serbs increasingly needed economically viable ways of communicating, since vowels aren't exactly cheap!
 
-`serb.zip` is a universal transcoder between Serbo-Croatian and Russian languages that is almost entirely isomorphic — it maps from one lingual domain to another with no loss of meaning and some loss of whitespace and capitalisation. `serb.zip` works with both English and East-Slavic texts.
+`serb.zip` is a lightweight framework for transcoding text from one lexical form to another. It presently comes with one codec — **Balkanoid** — a universal transcoder between Serbo-Croatian and Russian languages that is almost entirely isomorphic — it maps from one lingual domain to another with no loss of meaning and some loss of whitespace and capitalisation. Balkanoid works with both English and East-Slavic texts.
 
 # Getting Started
 ## Installation

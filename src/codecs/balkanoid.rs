@@ -1,3 +1,18 @@
+//! # Balkanoid
+//! _The codec that made Russians and Serbs inseparable._
+//!
+//! ## Historical background
+//! It has long been accepted that Serbian is a compact variant of Russian, with less liberal use
+//! of vowels. Since the forfeiting of the Riviera in 1991, the loss of tourism revenue has led
+//! to further austerity in vowel use. Serbs increasingly needed economically viable ways
+//! of communicating, since vowels aren't exactly cheap!
+//!
+//! # What is it?
+//! Balkanoid is a universal transcoder between Serbo-Croatian and Russian languages that is almost
+//! entirely isomorphic — it maps from one lingual domain to another with no loss of meaning and
+//! some loss of whitespace and capitalisation. Balkanoid works with both English and
+//! East-Slavic texts.
+
 pub mod dict;
 
 use crate::codecs::balkanoid::dict::WordResolveError;
@@ -6,11 +21,13 @@ use crate::succinct::Stringlike;
 pub use dict::Dict;
 use std::borrow::Cow;
 
+/// The Balkanoid codec.
 pub struct Balkanoid<'a> {
     dict: &'a Dict,
 }
 
 impl<'a> Balkanoid<'a> {
+    /// Creates a new Balkanoid codec that works off the given dictionary.
     pub fn new(dict: &'a Dict) -> Self {
         Self { dict }
     }

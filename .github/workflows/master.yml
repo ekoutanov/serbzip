@@ -16,6 +16,7 @@ jobs:
       - run: cargo test -- --include-ignored
       - run: cargo install cargo-deadlinks
       - run: cargo deadlinks
+      - run: bin/clippy-pedantic.sh
       - run: bin/compression-report.sh
       - run: cargo clean
       - run: rustup default nightly

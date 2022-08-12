@@ -1,3 +1,5 @@
+//! Entry point for the Balkanoid codec.
+
 use crate::cli::app_error::{AppError, CliError, CliErrorDetail, CliErrorKind};
 use crate::cli::banner::{BLUE, RED, WHITE};
 use crate::cli::{banner, downloader, is_extension, Args, Mode, compress_helper, expand_helper};

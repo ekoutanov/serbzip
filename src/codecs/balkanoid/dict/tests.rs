@@ -6,6 +6,16 @@ use std::io::{Cursor, Seek, SeekFrom};
 // $coverage:ignore-start
 
 #[test]
+fn from_hashmap() {
+    let dict = <Dict as From<_>>::from(HashMap::from(
+        [
+            (String::from("n"), vec![String::from("in"), String::from("no"), String::from("no")])
+        ]
+    ));
+    assert_eq!(Ok(Some(&String::from("no"))), dict.resolve("n", 1));
+}
+
+#[test]
 fn populate_incremental() {
     let mut dict = Dict::default();
 

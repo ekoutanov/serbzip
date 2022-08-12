@@ -1,3 +1,5 @@
+//! Utility for downloading files over HTTP(S).
+
 use std::fs::{create_dir_all, File};
 use std::io;
 use std::path::Path;

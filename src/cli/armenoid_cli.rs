@@ -1,3 +1,5 @@
+//! Entry point for the Armenoid codec.
+
 use crate::cli::app_error::{AppError, CliError, CliErrorKind};
 use crate::cli::banner::{BLUE, RED, YELLOW};
 use crate::cli::{banner, compress_helper, expand_helper, Args, Mode};

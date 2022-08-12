@@ -1,3 +1,6 @@
+//! # Armenoid
+//! A test codec that presently does very little.
+
 use crate::codecs::Codec;
 use std::convert::Infallible;
 use std::ops::Add;

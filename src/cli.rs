@@ -1,3 +1,6 @@
+//! Houses the command-line interface for `serb.zip`. The CLI is broken up into several pieces.
+//! The parsing of CLI arguments and the handling of the individual codecs are housed
+//! in separate modules.
 use clap::Parser;
 use serbzip::succinct::{CowStr, Errorlike};
 use std::ffi::OsString;
@@ -16,6 +19,10 @@ mod downloader;
 mod balkanoid_cli;
 mod armenoid_cli;
 
+/// The entrypoint to the CLI.
+///
+/// # Errors
+/// [`AppError`], encompassing all possible error types that the application may emit.
 pub fn run() -> Result<(), AppError> {
     let args = Args::from(&mut env::args_os());
     match args.codec.clone().unwrap_or(CodecImpl::Balkanoid) {

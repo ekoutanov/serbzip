@@ -1,3 +1,5 @@
+//! Errors that may arise in the CLI.
+
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::io;
@@ -6,6 +8,7 @@ use serbzip::succinct::CowStr;
 use serbzip::transcoder::TranscodeError;
 use crate::cli::downloader::DownloadToFileError;
 
+/// Errors arising from the parsing of CLI args.
 #[derive(Debug)]
 pub enum CliErrorKind {
     UnsupportedDictFormat,
@@ -29,6 +32,8 @@ impl Display for CliError {
     }
 }
 
+/// A complete listing of all application-level errors. This includes errors trapped during
+/// the parsing of command-line arguments, I/O errors and errors emitted by the codec.
 #[derive(Debug)]
 pub enum AppError {
     IoError(io::Error),
