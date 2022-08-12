@@ -18,6 +18,7 @@ pub struct Dict {
     entries: HashMap<String, Vec<String>>,
 }
 
+/// Emitted when no word could not be resolved at the specified position.
 pub type WordResolveError = Errorlike<CowStr>;
 
 fn comparator(lhs: &String, rhs: &String) -> Ordering {
@@ -26,6 +27,19 @@ fn comparator(lhs: &String, rhs: &String) -> Ordering {
 
 impl From<HashMap<String, Vec<String>>> for Dict {
     /// Instantiates a dictionary from a given map.
+    ///
+    /// # Examples
+    /// ```
+    /// use std::collections::HashMap;
+    /// use serbzip::codecs::balkanoid::Dict;
+    /// let dict = Dict::from(HashMap::from(
+    ///     [
+    ///         (String::from("t"), vec![String::from("at"), String::from("it"), String::from("tea")]),
+    ///         (String::from("n"), vec![String::from("in"), String::from("no"), String::from("on")])
+    ///     ]
+    /// ));
+    /// assert_eq!(6, dict.count());
+    /// ```
     fn from(entries: HashMap<String, Vec<String>>) -> Self {
         Self { entries }
     }

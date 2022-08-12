@@ -9,7 +9,7 @@ use std::io::{Cursor, Seek, SeekFrom};
 fn from_hashmap() {
     let dict = <Dict as From<_>>::from(HashMap::from(
         [
-            (String::from("n"), vec![String::from("in"), String::from("no"), String::from("no")])
+            (String::from("n"), vec![String::from("in"), String::from("no"), String::from("on")])
         ]
     ));
     assert_eq!(Ok(Some(&String::from("no"))), dict.resolve("n", 1));
