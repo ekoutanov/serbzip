@@ -4,6 +4,7 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::io;
 use bincode::error::{DecodeError, EncodeError};
+use serbzip::codecs::balkanoid::dict::{ReadFromTextFileError, OverflowError};
 use serbzip::succinct::CowStr;
 use serbzip::transcoder::TranscodeError;
 use crate::cli::downloader::DownloadToFileError;
@@ -42,6 +43,7 @@ pub enum AppError {
     DecodeError(DecodeError),
     CliError(CliError),
     TranscodeError(TranscodeError<Box<dyn Error>>),
+    DictOverflowError(OverflowError)
 }
 
 impl From<io::Error> for AppError {
@@ -65,6 +67,15 @@ impl From<EncodeError> for AppError {
 impl From<DecodeError> for AppError {
     fn from(error: DecodeError) -> Self {
         Self::DecodeError(error)
+    }
+}
+
+impl From<ReadFromTextFileError> for AppError {
+    fn from(error: ReadFromTextFileError) -> Self {
+        match error {
+            ReadFromTextFileError::IoError(error) => Self::IoError(error),
+            ReadFromTextFileError::DictOverflowError(error) => Self::DictOverflowError(error)
+        }
     }
 }
 
@@ -92,6 +103,7 @@ impl Display for AppError {
             AppError::DecodeError(error) => write!(f, "[decode error] {error}"),
             AppError::TranscodeError(error) => write!(f, "[transcode error] {error}"),
             AppError::DictDownloadError(error) => write!(f, "[dict. download error] {error}"),
+            AppError::DictOverflowError(error) => write!(f, "[dict. download error] {error}"),
         }
     }
 }

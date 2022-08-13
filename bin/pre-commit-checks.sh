@@ -3,5 +3,5 @@ set -e
 
 cargo test
 $(dirname "$0")/clippy-pedantic.sh
-cargo doc
+cargo doc --no-deps
 cargo deadlinks

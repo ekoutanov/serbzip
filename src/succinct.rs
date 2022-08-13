@@ -58,28 +58,5 @@ impl<T: Display + Debug> Error for Errorlike<T> {}
 /// a `'static` string slice.
 pub type CowStr = Cow<'static, str>;
 
-// /// Something that can pass for a [`String`] or a [`&str`].
-// pub trait Stringlike: AsRef<str> + Into<String> {
-//     fn into_owned(self) -> String;
-// }
-//
-// impl<'a> Stringlike for Cow<'a, str> {
-//     fn into_owned(self) -> String {
-//         self.into_owned()
-//     }
-// }
-//
-// impl Stringlike for String {
-//     fn into_owned(self) -> String {
-//         self
-//     }
-// }
-//
-// impl Stringlike for &str {
-//     fn into_owned(self) -> String {
-//         String::from(self)
-//     }
-// }
-
 #[cfg(test)]
 mod tests;

@@ -1,6 +1,6 @@
 use super::*;
 use std::collections::HashMap;
-use std::io::{Cursor, Seek, SeekFrom};
+use std::io::{Cursor, ErrorKind, Seek, SeekFrom};
 
 // $coverage:ignore-start
 
@@ -15,8 +15,8 @@ fn wordvec_push_capacity_bounds() {
 }
 
 #[test]
-fn wordvec_sort() {
-    let vec = WordVec::new(["in", "on", "inn", "no"]).unwrap();
+fn wordvec_sort_and_dedup() {
+    let vec = WordVec::new(["in", "on", "on", "inn", "no", "in"]).unwrap();
     assert_eq!(
         vec![
             String::from("in"),
@@ -44,7 +44,7 @@ fn wordvec_implements_as_ref() {
 fn from_hashmap() {
     let dict = Dict::from(HashMap::from([(
         String::from("n"),
-        vec![String::from("in"), String::from("no"), String::from("on")],
+        WordVec::new([String::from("in"), String::from("no"), String::from("on")]).unwrap(),
     )]));
     assert_eq!(Ok(Some(&String::from("no"))), dict.resolve("n", 1));
 }
@@ -53,65 +53,71 @@ fn from_hashmap() {
 fn populate_incremental() {
     let mut dict = Dict::default();
 
-    dict.populate(stringify(["uno", "no"]));
-    assert_eq!(
-        HashMap::from([(String::from("n"), stringify(["no", "uno"]))]),
-        dict.entries
-    );
-
-    dict.populate(stringify(["one", "one", "no"]));
-    assert_eq!(
-        HashMap::from([(String::from("n"), stringify(["no", "one", "uno"]))]),
-        dict.entries
-    );
-
-    dict.populate(stringify(["Anna"]));
-    assert_eq!(
-        HashMap::from([(String::from("n"), stringify(["no", "one", "uno"])),]),
-        dict.entries
-    );
-
-    dict.populate(stringify(["anna"]));
+    dict.populate(stringify(["uno", "no"])).unwrap();
     assert_eq!(
         HashMap::from([
-            (String::from("n"), stringify(["no", "one", "uno"])),
-            (String::from("nn"), stringify(["anna"]))
+            (String::from("n"), WordVec::new(["no", "uno"]).unwrap())
         ]),
         dict.entries
     );
 
-    dict.populate(stringify(["half-time"]));
+    dict.populate(stringify(["one", "one", "no"])).unwrap();
     assert_eq!(
         HashMap::from([
-            (String::from("n"), stringify(["no", "one", "uno"])),
-            (String::from("nn"), stringify(["anna"])),
-            (String::from("hlf-tm"), stringify(["half-time"]))
+            (String::from("n"), WordVec::new(["no", "one", "uno"]).unwrap())
         ]),
         dict.entries
     );
 
-    dict.populate(stringify(["on", "an", "in", "inn"]));
+    dict.populate(stringify(["Anna"])).unwrap();
+    assert_eq!(
+        HashMap::from([
+            (String::from("n"), WordVec::new(["no", "one", "uno"]).unwrap()),
+        ]),
+        dict.entries
+    );
+
+    dict.populate(stringify(["anna"])).unwrap();
+    assert_eq!(
+        HashMap::from([
+            (String::from("n"), WordVec::new(["no", "one", "uno"]).unwrap()),
+            (String::from("nn"), WordVec::new(["anna"]).unwrap())
+        ]),
+        dict.entries
+    );
+
+    dict.populate(stringify(["half-time"])).unwrap();
+    assert_eq!(
+        HashMap::from([
+            (String::from("n"), WordVec::new(["no", "one", "uno"]).unwrap()),
+            (String::from("nn"), WordVec::new(["anna"]).unwrap()),
+            (String::from("hlf-tm"), WordVec::new(["half-time"]).unwrap())
+        ]),
+        dict.entries
+    );
+
+    dict.populate(stringify(["on", "an", "in", "inn"])).unwrap();
     assert_eq!(
         HashMap::from([
             (
                 String::from("n"),
-                stringify(["an", "in", "no", "on", "one", "uno"])
+                WordVec::new(["an", "in", "no", "on", "one", "uno"]).unwrap()
             ),
-            (String::from("nn"), stringify(["inn", "anna"])),
-            (String::from("hlf-tm"), stringify(["half-time"]))
+            (String::from("nn"), WordVec::new(["inn", "anna"]).unwrap()),
+            (String::from("hlf-tm"), WordVec::new(["half-time"]).unwrap())
         ]),
         dict.entries
     );
 
-    dict.populate(stringify(["i", "one", "aio"]));
+    dict.populate(stringify(["i", "one", "aio"])).unwrap();
     assert_eq!(
         HashMap::from([
             (
                 String::from("n"),
-                stringify(["an", "in", "no", "on", "one", "uno"])
+                WordVec::new(["an", "in", "no", "on", "one", "uno"]).unwrap()
             ),
-            (String::from("nn"), stringify(["inn", "anna"])),
-            (String::from("hlf-tm"), stringify(["half-time"]))
+            (String::from("nn"), WordVec::new(["inn", "anna"]).unwrap()),
+            (String::from("hlf-tm"), WordVec::new(["half-time"]).unwrap())
         ]),
         dict.entries
     );
@@ -141,7 +147,7 @@ fn count() {
             expect: 3,
         },
     ] {
-        let dict = Dict::new(case.input.clone());
+        let dict = Dict::new(case.input.clone()).unwrap();
         assert_eq!(case.expect, dict.count(), "for input {:?}", &case.input);
     }
 }
@@ -183,7 +189,7 @@ fn resolve() {
             expect: Ok(None),
         },
     ] {
-        let dict = Dict::new(case.input_dict.clone());
+        let dict = Dict::new(case.input_dict.clone()).unwrap();
         let actual = dict
             .resolve(case.input_fingerprint, case.input_position)
             .map(|option_of_string_ref| option_of_string_ref.map(String::as_str));
@@ -226,7 +232,7 @@ fn position() {
             expect: None,
         },
     ] {
-        let dict = Dict::new(case.input_dict.clone());
+        let dict = Dict::new(case.input_dict.clone()).unwrap();
         assert_eq!(
             case.expect,
             dict.position(case.input_fingerprint, case.input_word),
@@ -256,7 +262,7 @@ fn contains_fingerprint() {
             expect: false,
         },
     ] {
-        let dict = Dict::new(case.input_dict.clone());
+        let dict = Dict::new(case.input_dict.clone()).unwrap();
         assert_eq!(
             case.expect,
             dict.contains_fingerprint(case.input_fingerprint),
@@ -273,23 +279,23 @@ fn populate_should_fill_to_fingerprint_limit() {
         .into_iter()
         .map(|i| format!("test-{}", "a".repeat(i)))
         .collect::<Vec<_>>();
-    dict.populate(words);
+    dict.populate(words).unwrap();
 }
 
 #[test]
-#[should_panic(expected = "too many words associated")]
+#[should_panic(expected = "too many words")]
 fn populate_should_not_fill_past_fingerprint_limit() {
     let mut dict = Dict::default();
     let words = (0..256)
         .into_iter()
         .map(|i| format!("test-{}", "a".repeat(i)))
         .collect::<Vec<_>>();
-    dict.populate(words);
+    dict.populate(words).unwrap();
 }
 
 #[test]
 fn write_and_read_binary_image() {
-    let dict = Dict::new(stringify(["in", "on", "at"]));
+    let dict = Dict::new(stringify(["in", "on", "at"])).unwrap();
     let mut cursor = Cursor::new(Vec::new());
     dict.write_to_binary_image(&mut cursor).unwrap();
     cursor.seek(SeekFrom::Start(0)).unwrap();
@@ -310,16 +316,25 @@ fn read_from_text_file() {
     let mut cursor = Cursor::new(text.as_bytes());
     let loaded = Dict::read_from_text_file(&mut cursor).unwrap();
     assert_eq!(
-        Dict::new(stringify(["in", "on", "at", "the", "is", "of", "off"])).entries,
+        Dict::new(stringify(["in", "on", "at", "the", "is", "of", "off"])).unwrap().entries,
         loaded.entries
     );
 }
 
+#[test]
+fn read_from_text_file_error_implements_debug() {
+    let error = ReadFromTextFileError::from(Error::new(ErrorKind::AddrInUse, "test"));
+    assert!(format!("{error:?}").contains("IoError"));
+
+    let error = ReadFromTextFileError::from(OverflowError::borrowed("test"));
+    assert!(format!("{error:?}").contains("DictOverflowError"));
+}
+
 impl Dict {
-    pub fn new(line: impl IntoIterator<Item = impl Into<String>>) -> Dict {
+    pub fn new(line: impl IntoIterator<Item = impl Into<String>>) -> Result<Dict, OverflowError> {
         let mut dict = Dict::default();
-        dict.populate(line.into_iter().map(Into::into));
-        dict
+        dict.populate(line.into_iter().map(Into::into))?;
+        Ok(dict)
     }
 }
 

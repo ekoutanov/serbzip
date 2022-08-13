@@ -61,22 +61,4 @@ fn errorlike_implements_error() {
     );
 }
 
-// #[test]
-// fn cow_of_str_implements_stringlike() {
-//     let stringlike = CowStr::Borrowed("test");
-//     assert_eq!(String::from("test"), Stringlike::into_owned(stringlike));
-// }
-//
-// #[test]
-// fn string_implements_stringlike() {
-//     let stringlike = String::from("test");
-//     assert_eq!(String::from("test"), Stringlike::into_owned(stringlike));
-// }
-//
-// #[test]
-// fn str_slice_implements_stringlike() {
-//     let stringlike = "test";
-//     assert_eq!(String::from("test"), Stringlike::into_owned(stringlike));
-// }
-
 // $coverage:ignore-end

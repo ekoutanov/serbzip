@@ -424,7 +424,7 @@ fn compress_expand_word() {
             expect_proper_capitalisation: true
         },
     ] {
-        let dict = Dict::new(case.input_dict.clone());
+        let dict = Dict::new(case.input_dict.clone()).unwrap();
         let expected = EncodedWord::new(case.expect_encoded.0, case.expect_encoded.1.to_owned());
         let actual = compress_word(&dict, case.input_word);
         assert_eq!(
@@ -463,7 +463,7 @@ fn compress_expand_word() {
 
 #[test]
 fn expand_word_cannot_resolve() {
-    let dict = Dict::new(vec!["in", "on", "as", "is"]);
+    let dict = Dict::new(vec!["in", "on", "as", "is"]).unwrap();
     let result = expand_word(
         &dict,
         EncodedWord {
@@ -504,7 +504,7 @@ fn compress_expand_line() {
             expect: "He came N, S One",
         },
     ] {
-        let dict = Dict::new(case.input_dict.clone());
+        let dict = Dict::new(case.input_dict.clone()).unwrap();
         let codec = Balkanoid::new(&dict);
         let actual = codec.compress_line(case.input_line);
         assert_eq!(case.expect, actual, "[compression] for {case:?}");
@@ -520,7 +520,7 @@ fn compress_expand_line() {
 
 #[test]
 fn expand_line_cannot_resolve() {
-    let dict = Dict::new(vec!["in", "on", "as", "is"]);
+    let dict = Dict::new(vec!["in", "on", "as", "is"]).unwrap();
     let result = Balkanoid::new(&dict).expand_line("  n");
     assert_eq!(
         Err(WordResolveError::borrowed(

@@ -2,47 +2,58 @@
 //! an input stream (in text and binary modes) and for writing a binary
 //! image to a file.
 
-use std::cmp::Ordering;
 use crate::codecs::balkanoid::Reduction;
 use crate::succinct::{CowStr, Errorlike};
 use bincode::config;
 use bincode::error::{DecodeError, EncodeError};
+use std::cmp::Ordering;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::io;
-use std::io::{Read, Write};
+use std::io::{Error, Read, Write};
 
-/// A vector of words that is capped in size to 2^8 entries and is always sorted.
-#[derive(Default, Debug)]
+/// A vector of words that is capped in size to 2^8 entries, is always sorted and contains
+/// no duplicate entries.
+#[derive(Default, Debug, bincode::Encode, bincode::Decode, PartialEq, Eq)]
 pub struct WordVec(Vec<String>);
 
-/// When a word vector is about to overflow; i.e., an attempt was made to add more than 2^8 entries.
-pub type VecOverflowError = Errorlike<CowStr>;
+/// Emitted when a word vector is about to overflow; i.e., an attempt was made to add more than 2^8 entries.
+pub type OverflowError = Errorlike<CowStr>;
 
 impl WordVec {
-    /// Creates a new vector from a given iterable of string-like objects.
+    /// Creates a new vector from a given iterable of string-like words.
     ///
     /// # Errors
-    /// [`VecOverflowError`] if this operation would result in a vector that exceeds 2^8 entries.
-    pub fn new(words: impl IntoIterator<Item = impl Into<String>>) -> Result<WordVec, VecOverflowError> {
+    /// [`OverflowError`] if this operation would result in a vector that exceeds 2^8 entries.
+    pub fn new(
+        words: impl IntoIterator<Item = impl Into<String>>,
+    ) -> Result<WordVec, OverflowError> {
         let mut vec = WordVec::default();
         for item in words {
-            vec.push(item.into())?;
+            vec.push(item)?;
         }
         Ok(vec)
     }
 
-    /// Appends a word to the vector.
+    /// Appends a string-like word to the vector.
     ///
     /// # Errors
-    /// [`VecOverflowError`] if this operation would result in a vector that exceeds 2^8 entries.
-    pub fn push(&mut self, word: String) -> Result<(), VecOverflowError> {
+    /// [`OverflowError`] if this operation would result in a vector that exceeds 2^8 entries.
+    pub fn push(&mut self, word: impl Into<String>) -> Result<(), OverflowError> {
         if self.0.len() == u8::MAX as usize {
-            Err(VecOverflowError::borrowed("too many words in vector"))
+            Err(OverflowError::borrowed("too many words in vector"))
         } else {
-            self.0.push(word);
-            self.0.sort_by(comparator);
-            Ok(())
+            let word = word.into();
+            let position =  self
+                .0
+                .binary_search_by(|candidate| comparator(candidate, &word));
+            match position {
+                Ok(_) => Ok(()),
+                Err(position) => {
+                    self.0.insert(position, word);
+                    Ok(())
+                }
+            }
         }
     }
 }
@@ -62,7 +73,7 @@ impl From<WordVec> for Vec<String> {
 /// The dictionary used by [`Balkanoid`](super::Balkanoid).
 #[derive(Default, Debug, bincode::Encode, bincode::Decode, PartialEq, Eq)]
 pub struct Dict {
-    entries: HashMap<String, Vec<String>>,
+    entries: HashMap<String, WordVec>,
 }
 
 /// Emitted when no word could be resolved at the specified position.
@@ -72,7 +83,7 @@ fn comparator(lhs: &String, rhs: &String) -> Ordering {
     lhs.len().cmp(&rhs.len()).then(lhs.cmp(rhs))
 }
 
-impl From<HashMap<String, Vec<String>>> for Dict {
+impl From<HashMap<String, WordVec>> for Dict {
     /// Instantiates a dictionary from a given map.
     ///
     /// It assumes that the vectors are pre-sorted and there are no more than
@@ -82,47 +93,69 @@ impl From<HashMap<String, Vec<String>>> for Dict {
     /// ```
     /// use std::collections::HashMap;
     /// use serbzip::codecs::balkanoid::Dict;
+    /// use serbzip::codecs::balkanoid::dict::WordVec;
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let dict = Dict::from(HashMap::from(
     ///     [
-    ///         (String::from("t"), vec![String::from("at"), String::from("it"), String::from("tea")]),
-    ///         (String::from("n"), vec![String::from("in"), String::from("no"), String::from("on")])
+    ///         (String::from("t"), WordVec::new([String::from("at"), String::from("it"), String::from("tea")])?),
+    ///         (String::from("n"), WordVec::new([String::from("in"), String::from("no"), String::from("on")])?)
     ///     ]
     /// ));
     /// assert_eq!(6, dict.count());
+    /// # Ok(())
+    /// # }
     /// ```
-    fn from(entries: HashMap<String, Vec<String>>) -> Self {
+    fn from(entries: HashMap<String, WordVec>) -> Self {
         Self { entries }
+    }
+}
+
+/// Emitted when [`Dict::read_from_text_file`] encounters an error.
+#[derive(Debug)]
+pub enum ReadFromTextFileError {
+    IoError(io::Error),
+    DictOverflowError(OverflowError),
+}
+
+impl From<io::Error> for ReadFromTextFileError {
+    fn from(error: Error) -> Self {
+        Self::IoError(error)
+    }
+}
+
+impl From<OverflowError> for ReadFromTextFileError {
+    fn from(error: OverflowError) -> Self {
+        Self::DictOverflowError(error)
     }
 }
 
 impl Dict {
     /// Populates the dictionary from a collection of [`String`] words.
     ///
-    /// # Panics
-    /// If more than [`u8::MAX`] words end up associated with the same fingerprint.
-    pub fn populate(&mut self, words: impl IntoIterator<Item = String>) {
+    /// # Errors
+    /// [`OverflowError`] if more than 2^8 words would end up associated with the same fingerprint.
+    pub fn populate(
+        &mut self,
+        words: impl IntoIterator<Item = String>,
+    ) -> Result<(), OverflowError> {
         for word in words {
             let reduction = Reduction::from(&word as &str).take_if_lowercase();
             if let Some(Reduction { fingerprint, .. }) = reduction {
                 if !fingerprint.is_empty() {
                     let mapped_words = match self.entries.entry(fingerprint) {
                         Entry::Occupied(entry) => entry.into_mut(),
-                        Entry::Vacant(entry) => entry.insert(vec![]),
+                        Entry::Vacant(entry) => entry.insert(WordVec::default()),
                     };
-                    assert_ne!(mapped_words.len(), u8::MAX as usize, "too many words associated with the fingerprint '{}'", word);
-                    if mapped_words.binary_search_by(|candidate| comparator(candidate, &word)).is_ok() {
-                        continue   // don't collate duplicate words
-                    }
-                    mapped_words.push(word);
-                    mapped_words.sort_by(comparator);
+                    mapped_words.push(word)?;
                 }
             }
         }
+        Ok(())
     }
 
     /// Obtains the aggregate count of words collated in this dictionary.
     pub fn count(&self) -> usize {
-        self.entries.values().map(Vec::len).sum()
+        self.entries.values().map(AsRef::as_ref).map(Vec::len).sum()
     }
 
     /// Resolves a collated word, given its fingerprint and position.
@@ -142,7 +175,7 @@ impl Dict {
     ) -> Result<Option<&String>, WordResolveError> {
         match self.entries.get(fingerprint) {
             None => Ok(None),
-            Some(entry) => match entry.get(position as usize) {
+            Some(entry) => match entry.as_ref().get(position as usize) {
                 None => Err(Errorlike::owned(format!(
                     "no dictionary word at position {position} for fingerprint '{fingerprint}'"
                 ))),
@@ -159,9 +192,10 @@ impl Dict {
         match self.entries.get(fingerprint) {
             None => None,
             Some(entry) => entry
+                .as_ref()
                 .iter()
                 .position(|existing| existing == word)
-                .map(|pos| u8::try_from(pos).unwrap()),  // pos is guaranteed to be less than 2^8
+                .map(|pos| u8::try_from(pos).unwrap()), // pos is guaranteed to be less than 2^8
         }
     }
 
@@ -190,14 +224,14 @@ impl Dict {
     /// wordlist.
     ///
     /// # Errors
-    /// [`io::Error`] if an I/O error occurs.
-    pub fn read_from_text_file(r: &mut impl Read) -> Result<Dict, io::Error> {
+    /// [`ReadFromTextFileError`] if an I/O error occurs or if a vector inside the dictionary would overflow.
+    pub fn read_from_text_file(r: &mut impl Read) -> Result<Dict, ReadFromTextFileError> {
         let mut buf = String::new();
         r.read_to_string(&mut buf)?;
         let mut dict = Dict::default();
         for line in buf.lines() {
             let line = line.split_whitespace();
-            dict.populate(line.map(ToOwned::to_owned));
+            dict.populate(line.map(ToOwned::to_owned))?;
         }
         Ok(dict)
     }

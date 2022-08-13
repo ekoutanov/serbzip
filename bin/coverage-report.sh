@@ -34,3 +34,16 @@ grcov ccov.zip -s . --llvm  --ignore-not-existing --ignore "/*" --excl-start "\\
 
 # Clean up
 rm ccov.zip
+
+if [ "$1" == "--open" ]; then
+  index="file://$(pwd)/${base_dir}/../coverage/index.html"
+
+  if command -v xdg-open &> /dev/null; then
+    xdg-open $index
+  elif command -v open &> /dev/null; then
+    open $index
+  else
+    echo >&2 "neither xdg-open nor open are installed"
+    exit 1
+  fi
+fi
