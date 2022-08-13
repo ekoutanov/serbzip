@@ -208,8 +208,8 @@ struct PunctuatedWord<'a> {
     suffix: Cow<'a, str>,
 }
 
-impl PunctuatedWord<'_> {
-    fn from(word: &str) -> PunctuatedWord {
+impl <'a> From<&'a str> for PunctuatedWord<'a> {
+    fn from(word: &'a str) -> Self {
         let position = word.chars().enumerate().position(|(position, ch)| {
             // println!("position: {position}, char: {ch}");
             match position {
@@ -321,7 +321,7 @@ fn restore_capitalisation(
 const ESCAPE: u8 = b'\\';
 
 fn expand_word(dict: &Dict, word: EncodedWord) -> Result<String, WordResolveError> {
-    let punctuated = PunctuatedWord::from(&word.body);
+    let punctuated = PunctuatedWord::from(word.body.as_str());
     if punctuated.prefix.is_empty() {
         return Ok(word.body);
     }

@@ -24,7 +24,7 @@ mod armenoid_cli;
 /// # Errors
 /// [`AppError`], encompassing all possible error types that the application may emit.
 pub fn run() -> Result<(), AppError> {
-    let args = Args::from(&mut env::args_os());
+    let args = Args::load(&mut env::args_os());
     match args.codec.clone().unwrap_or(CodecImpl::Balkanoid) {
         CodecImpl::Balkanoid => balkanoid_cli::run(&args),
         CodecImpl::Armenoid => armenoid_cli::run(&args),
@@ -98,7 +98,7 @@ enum Mode {
 }
 
 impl Args {
-    pub fn from<I, T>(itr: I) -> Args
+    pub fn load<I, T>(itr: I) -> Args
     where
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,
@@ -118,8 +118,6 @@ impl Args {
         }
     }
 
-    //    eprintln!("Enter text; CTRL+D when done.");
-    //Ok(Box::new(io::stdin()))
     fn input_reader(&self) -> Result<Box<dyn Read>, AppError> {
         self.input_file
             .as_ref()
