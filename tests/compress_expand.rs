@@ -2,7 +2,6 @@ mod common;
 
 use serbzip::codecs::balkanoid::{Balkanoid, Dict};
 use serbzip::codecs::Codec;
-use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter};
 use std::path::{Path};

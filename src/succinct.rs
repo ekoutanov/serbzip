@@ -35,13 +35,13 @@ where
 {
     /// Convenience for constructing an [`Errorlike`] encapsulating a [`Cow`] that contains
     /// owned data.
-    pub fn from_owned(c: <C as ToOwned>::Owned) -> Self {
+    pub fn owned(c: <C as ToOwned>::Owned) -> Self {
         Self(Cow::Owned(c))
     }
 
     /// Convenience for constructing an [`Errorlike`] encapsulating a [`Cow`] that contains
     /// borrowed data.
-    pub fn from_borrowed(c: &'a C) -> Self {
+    pub fn borrowed(c: &'a C) -> Self {
         Self(Cow::Borrowed(c))
     }
 }
@@ -58,28 +58,28 @@ impl<T: Display + Debug> Error for Errorlike<T> {}
 /// a `'static` string slice.
 pub type CowStr = Cow<'static, str>;
 
-/// Something that can pass for a [`String`] or an [`&str`].
-pub trait Stringlike: AsRef<str> {
-    fn into_owned(self) -> String;
-}
-
-impl<'a> Stringlike for Cow<'a, str> {
-    fn into_owned(self) -> String {
-        self.into_owned()
-    }
-}
-
-impl Stringlike for String {
-    fn into_owned(self) -> String {
-        self
-    }
-}
-
-impl Stringlike for &str {
-    fn into_owned(self) -> String {
-        String::from(self)
-    }
-}
+// /// Something that can pass for a [`String`] or a [`&str`].
+// pub trait Stringlike: AsRef<str> + Into<String> {
+//     fn into_owned(self) -> String;
+// }
+//
+// impl<'a> Stringlike for Cow<'a, str> {
+//     fn into_owned(self) -> String {
+//         self.into_owned()
+//     }
+// }
+//
+// impl Stringlike for String {
+//     fn into_owned(self) -> String {
+//         self
+//     }
+// }
+//
+// impl Stringlike for &str {
+//     fn into_owned(self) -> String {
+//         String::from(self)
+//     }
+// }
 
 #[cfg(test)]
 mod tests;

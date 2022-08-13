@@ -4,20 +4,20 @@ use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use std::ops::Deref;
 
-use crate::succinct::{CowStr, Errorlike, Stringlike};
+use crate::succinct::{CowStr, Errorlike};
 
 // $coverage:ignore-start
 
 #[test]
 fn errorlike_from_owned() {
-    let errorlike = Errorlike::<CowStr>::from_owned(String::from("test"));
+    let errorlike = Errorlike::<CowStr>::owned(String::from("test"));
     assert_eq!("test", errorlike.0.as_ref());
     assert_eq!(String::from("test"), errorlike.0.into_owned());
 }
 
 #[test]
 fn errorlike_from_borrowed() {
-    let errorlike = Errorlike::<CowStr>::from_borrowed("test");
+    let errorlike = Errorlike::<CowStr>::borrowed("test");
     assert_eq!("test", errorlike.0.as_ref());
     assert_eq!(String::from("test"), errorlike.0.into_owned());
 }
@@ -47,7 +47,7 @@ fn errorlike_implements_display() {
 
 #[test]
 fn errorlike_implements_error() {
-    let errorlike = Errorlike::<CowStr>::from_borrowed("test");
+    let errorlike = Errorlike::<CowStr>::borrowed("test");
     let box_of_errorlike = Box::new(errorlike);
     assert_eq!(
         TypeId::of::<Errorlike<Cow<'static, str>>>(),
@@ -61,22 +61,22 @@ fn errorlike_implements_error() {
     );
 }
 
-#[test]
-fn cow_of_str_implements_stringlike() {
-    let stringlike = CowStr::Borrowed("test");
-    assert_eq!(String::from("test"), Stringlike::into_owned(stringlike));
-}
-
-#[test]
-fn string_implements_stringlike() {
-    let stringlike = String::from("test");
-    assert_eq!(String::from("test"), Stringlike::into_owned(stringlike));
-}
-
-#[test]
-fn str_slice_implements_stringlike() {
-    let stringlike = "test";
-    assert_eq!(String::from("test"), Stringlike::into_owned(stringlike));
-}
+// #[test]
+// fn cow_of_str_implements_stringlike() {
+//     let stringlike = CowStr::Borrowed("test");
+//     assert_eq!(String::from("test"), Stringlike::into_owned(stringlike));
+// }
+//
+// #[test]
+// fn string_implements_stringlike() {
+//     let stringlike = String::from("test");
+//     assert_eq!(String::from("test"), Stringlike::into_owned(stringlike));
+// }
+//
+// #[test]
+// fn str_slice_implements_stringlike() {
+//     let stringlike = "test";
+//     assert_eq!(String::from("test"), Stringlike::into_owned(stringlike));
+// }
 
 // $coverage:ignore-end

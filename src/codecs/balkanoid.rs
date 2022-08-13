@@ -17,7 +17,6 @@ pub mod dict;
 
 use crate::codecs::balkanoid::dict::WordResolveError;
 use crate::codecs::Codec;
-use crate::succinct::Stringlike;
 pub use dict::Dict;
 use std::borrow::Cow;
 
@@ -329,7 +328,7 @@ fn expand_word(dict: &Dict, word: EncodedWord) -> Result<String, WordResolveErro
 
     let recapitalised_prefix = if punctuated.prefix.as_bytes()[0] == ESCAPE {
         // word begins with an escape sequence
-        punctuated.prefix[1..punctuated.prefix.len()].into_owned()
+        String::from(&punctuated.prefix[1..punctuated.prefix.len()])
     } else {
         let mut chars = punctuated.prefix.chars();
         let leading_capital = chars.next().unwrap().is_uppercase();

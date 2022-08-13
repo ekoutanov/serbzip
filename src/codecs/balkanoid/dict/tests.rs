@@ -1,17 +1,51 @@
 use super::*;
-use crate::succinct::Stringlike;
 use std::collections::HashMap;
 use std::io::{Cursor, Seek, SeekFrom};
 
 // $coverage:ignore-start
 
 #[test]
+fn wordvec_push_capacity_bounds() {
+    let mut vec = WordVec::default();
+    for i in (0..255).into_iter() {
+        assert_eq!(Ok(()), vec.push(format!("{i}")));
+    }
+
+    assert!(vec.push(String::from("overflow")).is_err());
+}
+
+#[test]
+fn wordvec_sort() {
+    let vec = WordVec::new(["in", "on", "inn", "no"]).unwrap();
+    assert_eq!(
+        vec![
+            String::from("in"),
+            String::from("no"),
+            String::from("on"),
+            String::from("inn")
+        ],
+        <WordVec as Into<Vec<_>>>::into(vec)
+    );
+}
+
+#[test]
+fn wordvec_implements_debug() {
+    let vec = WordVec::new(["in", "on"]).unwrap();
+    assert_eq!(String::from("WordVec([\"in\", \"on\"])"), format!("{:?}", vec));
+}
+
+#[test]
+fn wordvec_implements_as_ref() {
+    let vec = WordVec::new(["in", "on"]).unwrap();
+    assert_eq!([String::from("in"), String::from("on")].as_slice(), vec.as_ref());
+}
+
+#[test]
 fn from_hashmap() {
-    let dict = <Dict as From<_>>::from(HashMap::from(
-        [
-            (String::from("n"), vec![String::from("in"), String::from("no"), String::from("on")])
-        ]
-    ));
+    let dict = Dict::from(HashMap::from([(
+        String::from("n"),
+        vec![String::from("in"), String::from("no"), String::from("on")],
+    )]));
     assert_eq!(Ok(Some(&String::from("no"))), dict.resolve("n", 1));
 }
 
@@ -107,7 +141,7 @@ fn count() {
             expect: 3,
         },
     ] {
-        let dict = Dict::from(case.input.clone());
+        let dict = Dict::new(case.input.clone());
         assert_eq!(case.expect, dict.count(), "for input {:?}", &case.input);
     }
 }
@@ -138,7 +172,7 @@ fn resolve() {
             input_dict: vec!["in", "on"],
             input_fingerprint: "n",
             input_position: 2,
-            expect: Err(WordResolveError::from_borrowed(
+            expect: Err(WordResolveError::borrowed(
                 "no dictionary word at position 2 for fingerprint 'n'",
             )),
         },
@@ -149,7 +183,7 @@ fn resolve() {
             expect: Ok(None),
         },
     ] {
-        let dict = Dict::from(case.input_dict.clone());
+        let dict = Dict::new(case.input_dict.clone());
         let actual = dict
             .resolve(case.input_fingerprint, case.input_position)
             .map(|option_of_string_ref| option_of_string_ref.map(String::as_str));
@@ -192,7 +226,7 @@ fn position() {
             expect: None,
         },
     ] {
-        let dict = Dict::from(case.input_dict.clone());
+        let dict = Dict::new(case.input_dict.clone());
         assert_eq!(
             case.expect,
             dict.position(case.input_fingerprint, case.input_word),
@@ -222,7 +256,7 @@ fn contains_fingerprint() {
             expect: false,
         },
     ] {
-        let dict = Dict::from(case.input_dict.clone());
+        let dict = Dict::new(case.input_dict.clone());
         assert_eq!(
             case.expect,
             dict.contains_fingerprint(case.input_fingerprint),
@@ -255,7 +289,7 @@ fn populate_should_not_fill_past_fingerprint_limit() {
 
 #[test]
 fn write_and_read_binary_image() {
-    let dict = Dict::from(stringify(["in", "on", "at"]));
+    let dict = Dict::new(stringify(["in", "on", "at"]));
     let mut cursor = Cursor::new(Vec::new());
     dict.write_to_binary_image(&mut cursor).unwrap();
     cursor.seek(SeekFrom::Start(0)).unwrap();
@@ -276,15 +310,15 @@ fn read_from_text_file() {
     let mut cursor = Cursor::new(text.as_bytes());
     let loaded = Dict::read_from_text_file(&mut cursor).unwrap();
     assert_eq!(
-        Dict::from(stringify(["in", "on", "at", "the", "is", "of", "off"])).entries,
+        Dict::new(stringify(["in", "on", "at", "the", "is", "of", "off"])).entries,
         loaded.entries
     );
 }
 
 impl Dict {
-    pub fn from(line: impl IntoIterator<Item = impl Stringlike>) -> Dict {
+    pub fn new(line: impl IntoIterator<Item = impl Into<String>>) -> Dict {
         let mut dict = Dict::default();
-        dict.populate(line.into_iter().map(Stringlike::into_owned));
+        dict.populate(line.into_iter().map(Into::into));
         dict
     }
 }

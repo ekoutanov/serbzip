@@ -12,13 +12,60 @@ use std::collections::HashMap;
 use std::io;
 use std::io::{Read, Write};
 
+/// A vector of words that is capped in size to 2^8 entries and is always sorted.
+#[derive(Default, Debug)]
+pub struct WordVec(Vec<String>);
+
+/// When a word vector is about to overflow; i.e., an attempt was made to add more than 2^8 entries.
+pub type VecOverflowError = Errorlike<CowStr>;
+
+impl WordVec {
+    /// Creates a new vector from a given iterable of string-like objects.
+    ///
+    /// # Errors
+    /// [`VecOverflowError`] if this operation would result in a vector that exceeds 2^8 entries.
+    pub fn new(words: impl IntoIterator<Item = impl Into<String>>) -> Result<WordVec, VecOverflowError> {
+        let mut vec = WordVec::default();
+        for item in words {
+            vec.push(item.into())?;
+        }
+        Ok(vec)
+    }
+
+    /// Appends a word to the vector.
+    ///
+    /// # Errors
+    /// [`VecOverflowError`] if this operation would result in a vector that exceeds 2^8 entries.
+    pub fn push(&mut self, word: String) -> Result<(), VecOverflowError> {
+        if self.0.len() == u8::MAX as usize {
+            Err(VecOverflowError::borrowed("too many words in vector"))
+        } else {
+            self.0.push(word);
+            self.0.sort_by(comparator);
+            Ok(())
+        }
+    }
+}
+
+impl AsRef<Vec<String>> for WordVec {
+    fn as_ref(&self) -> &Vec<String> {
+        &self.0
+    }
+}
+
+impl From<WordVec> for Vec<String> {
+    fn from(vec: WordVec) -> Self {
+        vec.0
+    }
+}
+
 /// The dictionary used by [`Balkanoid`](super::Balkanoid).
 #[derive(Default, Debug, bincode::Encode, bincode::Decode, PartialEq, Eq)]
 pub struct Dict {
     entries: HashMap<String, Vec<String>>,
 }
 
-/// Emitted when no word could not be resolved at the specified position.
+/// Emitted when no word could be resolved at the specified position.
 pub type WordResolveError = Errorlike<CowStr>;
 
 fn comparator(lhs: &String, rhs: &String) -> Ordering {
@@ -27,6 +74,9 @@ fn comparator(lhs: &String, rhs: &String) -> Ordering {
 
 impl From<HashMap<String, Vec<String>>> for Dict {
     /// Instantiates a dictionary from a given map.
+    ///
+    /// It assumes that the vectors are pre-sorted and there are no more than
+    /// [`u8::MAX`] words mapped from any fingerprint.
     ///
     /// # Examples
     /// ```
@@ -46,12 +96,12 @@ impl From<HashMap<String, Vec<String>>> for Dict {
 }
 
 impl Dict {
-    /// Populates the dictionary from a collection of [`String`] items.
+    /// Populates the dictionary from a collection of [`String`] words.
     ///
     /// # Panics
     /// If more than [`u8::MAX`] words end up associated with the same fingerprint.
-    pub fn populate(&mut self, line: impl IntoIterator<Item = String>) {
-        for word in line {
+    pub fn populate(&mut self, words: impl IntoIterator<Item = String>) {
+        for word in words {
             let reduction = Reduction::from(&word as &str).take_if_lowercase();
             if let Some(Reduction { fingerprint, .. }) = reduction {
                 if !fingerprint.is_empty() {
@@ -93,7 +143,7 @@ impl Dict {
         match self.entries.get(fingerprint) {
             None => Ok(None),
             Some(entry) => match entry.get(position as usize) {
-                None => Err(Errorlike::from_owned(format!(
+                None => Err(Errorlike::owned(format!(
                     "no dictionary word at position {position} for fingerprint '{fingerprint}'"
                 ))),
                 Some(word) => Ok(Some(word)),

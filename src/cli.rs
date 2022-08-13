@@ -44,7 +44,7 @@ impl FromStr for CodecImpl {
         match s {
             "balkanoid" => Ok(Self::Balkanoid),
             "armenoid" => Ok(Self::Armenoid),
-            other => Err(Errorlike::from_owned(format!("no such codec '{other}'"))),
+            other => Err(Errorlike::owned(format!("no such codec '{other}'"))),
         }
     }
 }
