@@ -10,15 +10,15 @@ use std::cmp::Ordering;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::io;
-use std::io::{Error, Read, Write};
+use std::io::{Read, Write};
+
+/// Emitted when a word vector is about to overflow; i.e., an attempt was made to add more than 2^8 entries.
+pub type OverflowError = Errorlike<CowStr>;
 
 /// A vector of words that is capped in size to 2^8 entries, is always sorted and contains
 /// no duplicate entries.
 #[derive(Default, Debug, bincode::Encode, bincode::Decode, PartialEq, Eq)]
 pub struct WordVec(Vec<String>);
-
-/// Emitted when a word vector is about to overflow; i.e., an attempt was made to add more than 2^8 entries.
-pub type OverflowError = Errorlike<CowStr>;
 
 impl WordVec {
     /// Creates a new vector from a given iterable of string-like words.
@@ -46,7 +46,7 @@ impl WordVec {
             let word = word.into();
             let position =  self
                 .0
-                .binary_search_by(|candidate| comparator(candidate, &word));
+                .binary_search_by(|existing| comparator(existing, &word));
             match position {
                 Ok(_) => Ok(()),
                 Err(position) => {
@@ -118,7 +118,7 @@ pub enum ReadFromTextFileError {
 }
 
 impl From<io::Error> for ReadFromTextFileError {
-    fn from(error: Error) -> Self {
+    fn from(error: io::Error) -> Self {
         Self::IoError(error)
     }
 }

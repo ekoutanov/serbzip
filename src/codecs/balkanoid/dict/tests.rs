@@ -323,7 +323,7 @@ fn read_from_text_file() {
 
 #[test]
 fn read_from_text_file_error_implements_debug() {
-    let error = ReadFromTextFileError::from(Error::new(ErrorKind::AddrInUse, "test"));
+    let error = ReadFromTextFileError::from(io::Error::new(ErrorKind::AddrInUse, "test"));
     assert!(format!("{error:?}").contains("IoError"));
 
     let error = ReadFromTextFileError::from(OverflowError::borrowed("test"));
