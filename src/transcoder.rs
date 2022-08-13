@@ -9,41 +9,41 @@ use std::{error, io};
 #[derive(Debug)]
 pub enum TranscodeError<L> {
     /// When an error occurred while processing a particular line.
-    ConversionError { line_no: u32, error: L },
+    Conversion { line_no: u32, error: L },
 
     // When the error relates to I/O.
-    IoError(io::Error),
+    Io(io::Error),
 }
 
 impl<L> TranscodeError<L> {
-    /// Maps the error into a [`TranscodeError::ConversionError`].
+    /// Maps the error into a [`TranscodeError::Conversion`].
     pub fn into_conversion_error(self) -> Option<(u32, L)> {
         match self {
-            TranscodeError::ConversionError { line_no, error } => Some((line_no, error)),
-            TranscodeError::IoError(_) => None,
+            TranscodeError::Conversion { line_no, error } => Some((line_no, error)),
+            TranscodeError::Io(_) => None,
         }
     }
 
-    /// Maps the error into a [`TranscodeError::IoError`].
+    /// Maps the error into a [`TranscodeError::Io`].
     pub fn into_io_error(self) -> Option<io::Error> {
         match self {
-            TranscodeError::ConversionError { .. } => None,
-            TranscodeError::IoError(error) => Some(error),
+            TranscodeError::Conversion { .. } => None,
+            TranscodeError::Io(error) => Some(error),
         }
     }
 }
 
 impl<L: Into<Box<dyn Error>>> TranscodeError<L> {
-    /// Boxes the given error if it is a [`TranscodeError::ConversionError`], returning the line error as an [`Error`] trait.
+    /// Boxes the given error if it is a [`TranscodeError::Conversion`], returning the line error as an [`Error`] trait.
     ///
     /// This is useful for working with methods that return a generic [`Result<_, Box<dyn Error>>`].
     pub fn into_dynamic(self) -> TranscodeError<Box<dyn Error>> {
         match self {
-            TranscodeError::ConversionError { line_no, error } => TranscodeError::ConversionError {
+            TranscodeError::Conversion { line_no, error } => TranscodeError::Conversion {
                 line_no,
                 error: error.into(),
             },
-            TranscodeError::IoError(error) => TranscodeError::IoError(error),
+            TranscodeError::Io(error) => TranscodeError::Io(error),
         }
     }
 }
@@ -51,10 +51,10 @@ impl<L: Into<Box<dyn Error>>> TranscodeError<L> {
 impl<L: Display + Debug> Display for TranscodeError<L> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            TranscodeError::ConversionError { line_no, error } => {
+            TranscodeError::Conversion { line_no, error } => {
                 write!(f, "conversion error on line {line_no}: {error}")
             }
-            TranscodeError::IoError(error) => write!(f, "I/O error: {error:?}"),
+            TranscodeError::Io(error) => write!(f, "I/O error: {error:?}"),
         }
     }
 }
@@ -63,7 +63,7 @@ impl<L: Display + Debug> error::Error for TranscodeError<L> {}
 
 impl<L> From<io::Error> for TranscodeError<L> {
     fn from(error: io::Error) -> Self {
-        TranscodeError::IoError(error)
+        TranscodeError::Io(error)
     }
 }
 
@@ -91,7 +91,7 @@ pub fn transcode<L>(
                     writeln!(w, "{}", output)?;
                     read_buf.clear();
                 }
-                Err(error) => return Err(TranscodeError::ConversionError { line_no, error }),
+                Err(error) => return Err(TranscodeError::Conversion { line_no, error }),
             },
         }
         line_no += 1;

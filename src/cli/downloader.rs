@@ -3,21 +3,23 @@
 use std::fs::{create_dir_all, File};
 use std::io;
 use std::path::Path;
+use reqwest::StatusCode;
 
 pub enum DownloadToFileError {
-    IoError(io::Error),
-    HttpError(reqwest::Error)
+    Io(io::Error),
+    Http(reqwest::Error),
+    StatusNotOk(u16)
 }
 
 impl From<io::Error> for DownloadToFileError {
     fn from(error: io::Error) -> Self {
-        Self::IoError(error)
+        Self::Io(error)
     }
 }
 
 impl From<reqwest::Error> for DownloadToFileError {
     fn from(error: reqwest::Error) -> Self {
-        Self::HttpError(error)
+        Self::Http(error)
     }
 }
 
@@ -29,10 +31,15 @@ fn create_parent_dirs(path: &impl AsRef<Path>) -> Result<(), io::Error> {
 
 pub fn download_to_file(url: &str, path: impl AsRef<Path>) -> Result<(), DownloadToFileError> {
     let resp = reqwest::blocking::get(url)?;
-    let body = resp.bytes()?;
-    let mut body_bytes = &body[..];
-    create_parent_dirs(&path)?;
-    let mut out = File::create(path)?;
-    io::copy(&mut body_bytes, &mut out)?;
-    Ok(())
+    match resp.status() {
+        StatusCode::OK => {
+            let body = resp.bytes()?;
+            let mut body_bytes = &body[..];
+            create_parent_dirs(&path)?;
+            let mut out = File::create(path)?;
+            io::copy(&mut body_bytes, &mut out)?;
+            Ok(())
+        },
+        _ => Err(DownloadToFileError::StatusNotOk(resp.status().as_u16()))
+    }
 }

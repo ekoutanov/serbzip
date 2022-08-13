@@ -113,19 +113,19 @@ impl From<HashMap<String, WordVec>> for Dict {
 /// Emitted when [`Dict::read_from_text_file`] encounters an error.
 #[derive(Debug)]
 pub enum ReadFromTextFileError {
-    IoError(io::Error),
-    DictOverflowError(OverflowError),
+    Io(io::Error),
+    DictOverflow(OverflowError),
 }
 
 impl From<io::Error> for ReadFromTextFileError {
     fn from(error: io::Error) -> Self {
-        Self::IoError(error)
+        Self::Io(error)
     }
 }
 
 impl From<OverflowError> for ReadFromTextFileError {
     fn from(error: OverflowError) -> Self {
-        Self::DictOverflowError(error)
+        Self::DictOverflow(error)
     }
 }
 

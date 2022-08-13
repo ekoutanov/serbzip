@@ -324,10 +324,10 @@ fn read_from_text_file() {
 #[test]
 fn read_from_text_file_error_implements_debug() {
     let error = ReadFromTextFileError::from(io::Error::new(ErrorKind::AddrInUse, "test"));
-    assert!(format!("{error:?}").contains("IoError"));
+    assert!(format!("{error:?}").contains("Io"));
 
     let error = ReadFromTextFileError::from(OverflowError::borrowed("test"));
-    assert!(format!("{error:?}").contains("DictOverflowError"));
+    assert!(format!("{error:?}").contains("DictOverflow"));
 }
 
 impl Dict {

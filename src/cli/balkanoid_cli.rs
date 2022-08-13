@@ -15,7 +15,7 @@ const DICT_EXT_TEXT: &str = "txt";
 const HOME_DICT_FILE: &str = ".serbzip/dict.blk";
 const DEFAULT_DICT_BINARY_FILE: &str = "dict.blk";
 const DEFAULT_DICT_TEXT_FILE: &str = "dict.txt";
-const DICT_URL: &str = "https://github.com/ekoutanov/serbzip/raw/master/dict.img";
+const DICT_URL: &str = "https://github.com/ekoutanov/serbzip/raw/master/dict.blk";
 
 pub(super) fn run(args: &Args) -> Result<(), AppError> {
     if !args.quiet {

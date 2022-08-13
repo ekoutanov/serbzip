@@ -12,10 +12,10 @@ fn transcode_error_conversion() {
     let error = TranscodeError::<()>::from(io::Error::new(ErrorKind::AddrInUse, "test"));
     assert!(error.into_io_error().is_some());
 
-    let error = TranscodeError::<()>::IoError(io::Error::new(ErrorKind::AddrInUse, "test"));
+    let error = TranscodeError::<()>::Io(io::Error::new(ErrorKind::AddrInUse, "test"));
     assert_eq!(None, error.into_conversion_error());
 
-    let error = TranscodeError::ConversionError {
+    let error = TranscodeError::Conversion {
         line_no: 10,
         error: Errorlike("test"),
     };
@@ -24,7 +24,7 @@ fn transcode_error_conversion() {
         error.into_conversion_error().unwrap()
     );
 
-    let error = TranscodeError::ConversionError {
+    let error = TranscodeError::Conversion {
         line_no: 10,
         error: Errorlike("test"),
     };
@@ -33,7 +33,7 @@ fn transcode_error_conversion() {
 
 #[test]
 fn transcode_error_into_dynamic_for_conversion_error() {
-    let error = TranscodeError::ConversionError {
+    let error = TranscodeError::Conversion {
         line_no: 10,
         error: Errorlike("test"),
     };
@@ -44,31 +44,31 @@ fn transcode_error_into_dynamic_for_conversion_error() {
 #[test]
 fn transcode_error_into_dynamic_for_io_error() {
     let error =
-        TranscodeError::<Errorlike<String>>::IoError(io::Error::new(ErrorKind::AddrInUse, "test"));
+        TranscodeError::<Errorlike<String>>::Io(io::Error::new(ErrorKind::AddrInUse, "test"));
     let boxed = error.into_dynamic();
     assert_eq!(ErrorKind::AddrInUse, boxed.into_io_error().unwrap().kind());
 }
 
 #[test]
 fn transcode_error_implements_debug() {
-    let error = TranscodeError::ConversionError {
+    let error = TranscodeError::Conversion {
         line_no: 10,
         error: Errorlike("test"),
     };
     let formatted = format!("{error:?}");
     assert_eq!(
-        "ConversionError { line_no: 10, error: Errorlike(\"test\") }",
+        "Conversion { line_no: 10, error: Errorlike(\"test\") }",
         formatted
     );
 
-    let error = TranscodeError::<()>::IoError(io::Error::new(ErrorKind::AddrInUse, "test"));
+    let error = TranscodeError::<()>::Io(io::Error::new(ErrorKind::AddrInUse, "test"));
     let formatted = format!("{error:?}");
-    assert!(formatted.contains("IoError"));
+    assert!(formatted.contains("Io"));
 }
 
 #[test]
 fn transcode_error_implements_display_for_conversion_error() {
-    let error = TranscodeError::ConversionError {
+    let error = TranscodeError::Conversion {
         line_no: 10,
         error: Errorlike("test"),
     };
@@ -79,7 +79,7 @@ fn transcode_error_implements_display_for_conversion_error() {
 #[test]
 fn transcode_error_implements_display_for_io_error() {
     let error =
-        TranscodeError::<String>::IoError(io::Error::new(ErrorKind::AddrInUse, "address in use"));
+        TranscodeError::<String>::Io(io::Error::new(ErrorKind::AddrInUse, "address in use"));
     let formatted = format!("{error}");
     assert_eq!(
         "I/O error: Custom { kind: AddrInUse, error: \"address in use\" }",
@@ -89,7 +89,7 @@ fn transcode_error_implements_display_for_io_error() {
 
 #[test]
 fn transcode_error_implements_error() {
-    let _: Box<dyn Error> = Box::new(TranscodeError::ConversionError {
+    let _: Box<dyn Error> = Box::new(TranscodeError::Conversion {
         line_no: 10,
         error: Errorlike("test"),
     });
@@ -125,7 +125,7 @@ fn transcode_with_processor_error() {
     assert!(result.is_err());
     assert!(matches!(
         result,
-        Err(TranscodeError::ConversionError {
+        Err(TranscodeError::Conversion {
             line_no: 2,
             error: "could not process"
         })
