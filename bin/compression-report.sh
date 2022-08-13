@@ -18,12 +18,18 @@ RESET='\033[0m'
 echo "|filename                      |size      |words     |gzip size |bzip2 size|sz size   |sz reduction %|sz.gz size  |sz+gz reduction %|sz.bz2 size |sz+bz2 reduction %|"
 echo "|-----------------------------:|---------:|---------:|---------:|---------:|---------:|-------------:|-----------:|----------------:|-----------:|-----------------:|"
 
-for file in $(ls -Sr $test_data_dir | grep -v "dict"); do
+main_test_files=$(ls -Sr $test_data_dir | grep -v "dict")
+additional_test_files="../README.md"
+
+files="$main_test_files $additional_test_files"
+for file in $files; do
   # basic file stats
   test_file=${test_data_dir}/$file
   raw_bytes=$(cat ${test_file} | wc -c)
   words=$(cat ${test_file} | wc -w)
   echo -n "|$(printf %30s $file)|$(printf %10d $raw_bytes)|$(printf %10d $words)"
+
+  file=$(basename $file)
 
   # compress with gzip
   cp $test_file $temp_dir
