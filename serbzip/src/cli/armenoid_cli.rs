@@ -3,8 +3,8 @@
 use crate::cli::app_error::{AppError, CliError, CliErrorKind};
 use crate::cli::banner::{BLUE, RED, YELLOW};
 use crate::cli::{banner, compress_helper, expand_helper, Args, Mode};
-use serbzip::codecs::armenoid::Armenoid;
-use serbzip::succinct::CowStr;
+use serbzip_core::codecs::armenoid::Armenoid;
+use serbzip_core::succinct::CowStr;
 
 pub(super) fn run(args: &Args) -> Result<(), AppError> {
     if !args.quiet() {

@@ -1,22 +1,22 @@
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
-use serbzip::codecs::balkanoid::Dict;
+use serbzip_core::codecs::balkanoid::Dict;
 
 mod common;
 
 #[test]
 fn read_write_read_small_dicts() {
-    test_round_trip("test_data/dict_eng_small.txt");
-    test_round_trip("test_data/dict_rus_small.txt");
+    test_round_trip("../test_data/dict_eng_small.txt");
+    test_round_trip("../test_data/dict_rus_small.txt");
 }
 
 #[ignore]
 #[test]
 fn read_write_read_large_dicts() {
-    test_round_trip("test_data/dict_eng_standard.txt");
-    test_round_trip("test_data/dict_eng_large.txt");
-    test_round_trip("test_data/dict_rus_standard.txt");
+    test_round_trip("../test_data/dict_eng_standard.txt");
+    test_round_trip("../test_data/dict_eng_large.txt");
+    test_round_trip("../test_data/dict_rus_standard.txt");
 }
 
 fn test_round_trip(txt_file: &str) {

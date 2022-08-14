@@ -3,10 +3,9 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::io;
-use bincode::error::{DecodeError, EncodeError};
-use serbzip::codecs::balkanoid::dict::{ReadFromTextFileError, OverflowError};
-use serbzip::succinct::CowStr;
-use serbzip::transcoder::TranscodeError;
+use serbzip_core::codecs::balkanoid::dict::{ReadFromTextFileError, OverflowError, DecodeError, EncodeError};
+use serbzip_core::succinct::CowStr;
+use serbzip_core::transcoder::TranscodeError;
 use crate::cli::downloader::DownloadToFileError;
 
 /// Errors arising from the parsing of CLI args.

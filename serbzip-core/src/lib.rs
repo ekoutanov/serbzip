@@ -13,13 +13,13 @@
 //! ```
 //! use std::fs::File;
 //! use std::io;
-//! use std::io::{BufReader, BufWriter};
-//! use serbzip::codecs::balkanoid::{Balkanoid, Dict};
-//! use serbzip::codecs::Codec;
+//! use std::io::BufReader;
+//! use serbzip_core::codecs::balkanoid::{Balkanoid, Dict};
+//! use serbzip_core::codecs::Codec;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! // this codec needs a dictionary to work from
-//! let mut dict_reader = BufReader::new(File::open("dict.blk")?);
+//! let mut dict_reader = BufReader::new(File::open("../dict.blk")?);
 //! let dict = Dict::read_from_binary_image(&mut dict_reader)?;
 //! let codec = Balkanoid::new(&dict);
 //!
@@ -33,7 +33,7 @@
 //! assert_eq!(input_line, expanded_line);
 //!
 //! // codecs also have helper methods for parsing I/O streams
-//! let mut input_reader = BufReader::new(File::open("test_data/antigonish.txt")?);
+//! let mut input_reader = BufReader::new(File::open("../test_data/antigonish.txt")?);
 //! let mut output_writer = io::Cursor::new(Vec::new());
 //! codec.compress(&mut input_reader, &mut output_writer)?;
 //! let compressed_document = String::from_utf8(output_writer.into_inner())?;
