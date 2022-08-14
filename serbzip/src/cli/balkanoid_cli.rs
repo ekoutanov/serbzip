@@ -3,12 +3,12 @@
 use crate::cli::app_error::{AppError, CliError, CliErrorDetail, CliErrorKind};
 use crate::cli::banner::{BLUE, RED, WHITE};
 use crate::cli::{banner, downloader, is_extension, Args, Mode, compress_helper, expand_helper};
-use serbzip::codecs::balkanoid::{Balkanoid, Dict};
+use serbzip_core::codecs::balkanoid::{Balkanoid, Dict};
 use std::borrow::Borrow;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
-use serbzip::succinct::CowStr;
+use serbzip_core::succinct::CowStr;
 
 const DICT_EXT_BINARY: &str = "blk";
 const DICT_EXT_TEXT: &str = "txt";

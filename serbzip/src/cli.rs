@@ -2,7 +2,7 @@
 //! The parsing of CLI arguments and the handling of the individual codecs are housed
 //! in separate modules.
 use clap::Parser;
-use serbzip::succinct::{CowStr, Errorlike};
+use serbzip_core::succinct::{CowStr, Errorlike};
 use std::ffi::OsString;
 use std::fmt::{Debug};
 use std::fs::{File};
@@ -10,7 +10,7 @@ use std::io::{BufReader, BufWriter, Read, Write};
 use std::str::FromStr;
 use std::{env, io};
 use std::path::Path;
-use serbzip::codecs::Codec;
+use serbzip_core::codecs::Codec;
 use crate::cli::app_error::{AppError, CliError, CliErrorDetail, CliErrorKind};
 
 pub mod banner;

@@ -11,9 +11,9 @@ use std::fmt::{Debug, Display, Formatter};
 ///
 /// # Examples
 /// ```
-/// use serbzip::succinct::Errorlike;
 /// use std::error::Error;
-/// use serbzip::succinct::CowStr;
+/// use serbzip_core::succinct::CowStr;
+/// use serbzip_core::succinct::Errorlike;
 ///
 /// # fn something_wrong() -> bool {
 /// #     false

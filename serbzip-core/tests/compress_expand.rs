@@ -1,7 +1,7 @@
 mod common;
 
-use serbzip::codecs::balkanoid::{Balkanoid, Dict};
-use serbzip::codecs::Codec;
+use serbzip_core::codecs::balkanoid::{Balkanoid, Dict};
+use serbzip_core::codecs::Codec;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter};
 use std::path::{Path};
@@ -9,49 +9,49 @@ use std::path::{Path};
 #[test]
 fn compress_and_expand_small_docs() {
     let dict = read_default_dict();
-    test_compress_and_expand(&dict, "test_data/antigonish.txt");
-    test_compress_and_expand(&dict, "test_data/no_man_is_an_island.txt");
-    test_compress_and_expand(&dict, "test_data/a_dream_within_a_dream.txt");
-    test_compress_and_expand(&dict, "test_data/u_lukomorya.txt");
-    test_compress_and_expand(&dict, "test_data/lyublyu_tebya.txt");
-    test_compress_and_expand(&dict, "test_data/the_raven.txt");
-    test_compress_and_expand(&dict, "README.md");
+    test_compress_and_expand(&dict, "../test_data/antigonish.txt");
+    test_compress_and_expand(&dict, "../test_data/no_man_is_an_island.txt");
+    test_compress_and_expand(&dict, "../test_data/a_dream_within_a_dream.txt");
+    test_compress_and_expand(&dict, "../test_data/u_lukomorya.txt");
+    test_compress_and_expand(&dict, "../test_data/lyublyu_tebya.txt");
+    test_compress_and_expand(&dict, "../test_data/the_raven.txt");
+    test_compress_and_expand(&dict, "../README.md");
 }
 
 #[test]
 #[ignore]
 fn compress_and_expand_medium_docs() {
     let dict = read_default_dict();
-    test_compress_and_expand(&dict, "test_data/alice_in_wonderland.txt");
-    test_compress_and_expand(&dict, "test_data/calculus_made_easy.txt");
-    test_compress_and_expand(&dict, "test_data/dracula.txt");
-    test_compress_and_expand(&dict, "test_data/effective_kafka.txt");
-    test_compress_and_expand(&dict, "test_data/frankenstein.txt");
-    test_compress_and_expand(&dict, "test_data/metamorphosis.txt");
-    test_compress_and_expand(&dict, "test_data/odnazhdy.txt");
-    test_compress_and_expand(&dict, "test_data/pride_and_prejudice.txt");
-    test_compress_and_expand(&dict, "test_data/sherlock_holmes.txt");
-    test_compress_and_expand(&dict, "test_data/the_prince.txt");
+    test_compress_and_expand(&dict, "../test_data/alice_in_wonderland.txt");
+    test_compress_and_expand(&dict, "../test_data/calculus_made_easy.txt");
+    test_compress_and_expand(&dict, "../test_data/dracula.txt");
+    test_compress_and_expand(&dict, "../test_data/effective_kafka.txt");
+    test_compress_and_expand(&dict, "../test_data/frankenstein.txt");
+    test_compress_and_expand(&dict, "../test_data/metamorphosis.txt");
+    test_compress_and_expand(&dict, "../test_data/odnazhdy.txt");
+    test_compress_and_expand(&dict, "../test_data/pride_and_prejudice.txt");
+    test_compress_and_expand(&dict, "../test_data/sherlock_holmes.txt");
+    test_compress_and_expand(&dict, "../test_data/the_prince.txt");
 }
 
 #[test]
 #[ignore]
 fn compress_and_expand_large_docs() {
     let dict = read_default_dict();
-    test_compress_and_expand(&dict, "test_data/anna_karenina_eng.txt");
-    test_compress_and_expand(&dict, "test_data/anna_karenina_rus.txt");
-    test_compress_and_expand(&dict, "test_data/count_of_monte_cristo.txt");
-    test_compress_and_expand(&dict, "test_data/crime_and_punishment_eng.txt");
-    test_compress_and_expand(&dict, "test_data/moby_dick.txt");
-    test_compress_and_expand(&dict, "test_data/mormon.txt");
-    test_compress_and_expand(&dict, "test_data/new_testament.txt");
-    test_compress_and_expand(&dict, "test_data/jane_eyre.txt");
-    test_compress_and_expand(&dict, "test_data/war_and_peace_eng.txt");
-    test_compress_and_expand(&dict, "test_data/war_and_peace_rus.txt");
+    test_compress_and_expand(&dict, "../test_data/anna_karenina_eng.txt");
+    test_compress_and_expand(&dict, "../test_data/anna_karenina_rus.txt");
+    test_compress_and_expand(&dict, "../test_data/count_of_monte_cristo.txt");
+    test_compress_and_expand(&dict, "../test_data/crime_and_punishment_eng.txt");
+    test_compress_and_expand(&dict, "../test_data/moby_dick.txt");
+    test_compress_and_expand(&dict, "../test_data/mormon.txt");
+    test_compress_and_expand(&dict, "../test_data/new_testament.txt");
+    test_compress_and_expand(&dict, "../test_data/jane_eyre.txt");
+    test_compress_and_expand(&dict, "../test_data/war_and_peace_eng.txt");
+    test_compress_and_expand(&dict, "../test_data/war_and_peace_rus.txt");
 }
 
 fn read_default_dict() -> Dict {
-    Dict::read_from_binary_image(&mut BufReader::new(File::open("dict.blk").unwrap())).unwrap()
+    Dict::read_from_binary_image(&mut BufReader::new(File::open("../dict.blk").unwrap())).unwrap()
 }
 
 fn test_compress_and_expand(dict: &Dict, original_file: &str) {

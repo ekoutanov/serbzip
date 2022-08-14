@@ -5,7 +5,7 @@
 use crate::codecs::balkanoid::Reduction;
 use crate::succinct::{CowStr, Errorlike};
 use bincode::config;
-use bincode::error::{DecodeError, EncodeError};
+pub use bincode::error::{DecodeError, EncodeError};
 use std::cmp::Ordering;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
@@ -92,8 +92,8 @@ impl From<HashMap<String, WordVec>> for Dict {
     /// # Examples
     /// ```
     /// use std::collections::HashMap;
-    /// use serbzip::codecs::balkanoid::Dict;
-    /// use serbzip::codecs::balkanoid::dict::WordVec;
+    /// use serbzip_core::codecs::balkanoid::Dict;
+    /// use serbzip_core::codecs::balkanoid::dict::WordVec;
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let dict = Dict::from(HashMap::from(
     ///     [
