@@ -13,7 +13,7 @@
 //! ```
 //! use std::fs::File;
 //! use std::io;
-//! use std::io::{BufReader, BufWriter};
+//! use std::io::BufReader;
 //! use serbzip_core::codecs::balkanoid::{Balkanoid, Dict};
 //! use serbzip_core::codecs::Codec;
 //!
