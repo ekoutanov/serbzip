@@ -10,3 +10,4 @@ default.profraw
 lcov.info
 coverage
 *.profraw
+/doc

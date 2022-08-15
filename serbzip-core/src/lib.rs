@@ -45,3 +45,7 @@
 pub mod codecs;
 pub mod succinct;
 pub mod transcoder;
+
+#[doc = include_str!("../README.md")]
+#[cfg(doc)]
+fn readme() {}

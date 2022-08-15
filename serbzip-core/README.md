@@ -1,5 +1,4 @@
-`serbzip-core`
-===
+# `serbzip-core`
 The library package for [serb.zip](https://github.com/ekoutanov/serbzip).
 
 [![Crates.io](https://img.shields.io/crates/v/serbzip_core?style=flat-square&logo=rust)](https://crates.io/crates/serbzip-core)
