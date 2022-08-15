@@ -1,15 +1,16 @@
 [package]
 name = "serbzip"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 authors = ["Emil Koutanov"]
 license = "MIT"
 description = "A quasi-lossless Balkanoidal meta-lingual compressor."
 repository = "https://github.com/ekoutanov/serbzip"
 exclude = ["/test_data", "/logo", "/bin", "/.idea", "/.github", "/coverage"]
+readme = "../README.md"
 
 [dependencies]
-serbzip-core = { version = "0.6.0", path = "../serbzip-core" }
+serbzip-core = { version = "0.7.0", path = "../serbzip-core" }
 
 clap = { version = "3.2.16", features = ["derive"] }
 home = { version = "0.5.3" }
