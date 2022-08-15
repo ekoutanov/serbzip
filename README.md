@@ -105,6 +105,9 @@ If you are using this application, you should probably seek professional help.
 
 If you get stuck, run `serbzip --help`.
 
+# Using `serb.zip` as a library
+To embed `serb.zip` in your application, follow these [instructions](serbzip-core/README.md).
+
 # How `serb.zip` Works
 Each codec works differently. They share some common concepts but the underlying algorithms may be entirely different.
 
