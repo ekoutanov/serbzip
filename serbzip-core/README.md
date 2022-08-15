@@ -1,6 +1,6 @@
 `serbzip-core`
 ===
-The library package for [serb.zip](https://https://github.com/ekoutanov/serbzip).
+The library package for [serb.zip](https://github.com/ekoutanov/serbzip).
 
 [![Crates.io](https://img.shields.io/crates/v/serbzip_core?style=flat-square&logo=rust)](https://crates.io/crates/serbzip-core)
 [![docs.rs](https://img.shields.io/badge/docs.rs-serbzip_core-blue?style=flat-square&logo=docs.rs)](https://docs.rs/serbzip-core)
