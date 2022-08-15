@@ -1,6 +1,6 @@
 [package]
 name = "serbzip"
-version = "0.8.0"
+version = "0.9.0"
 edition = "2021"
 authors = ["Emil Koutanov"]
 license = "MIT"
@@ -10,7 +10,7 @@ exclude = ["/test_data", "/logo", "/bin", "/.idea", "/.github", "/coverage"]
 readme = "../README.md"
 
 [dependencies]
-serbzip-core = { version = "0.8.0", path = "../serbzip-core" }
+serbzip-core = { version = "0.9.0", path = "../serbzip-core" }
 
 clap = { version = "3.2.16", features = ["derive"] }
 home = { version = "0.5.3" }
