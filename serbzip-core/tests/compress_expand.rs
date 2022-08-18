@@ -14,6 +14,7 @@ fn compress_and_expand_small_docs() {
     test_compress_and_expand(&dict, "../test_data/a_dream_within_a_dream.txt");
     test_compress_and_expand(&dict, "../test_data/u_lukomorya.txt");
     test_compress_and_expand(&dict, "../test_data/lyublyu_tebya.txt");
+    test_compress_and_expand(&dict, "../test_data/subterranean_vaults.txt");
     test_compress_and_expand(&dict, "../test_data/the_raven.txt");
     test_compress_and_expand(&dict, "../README.md");
 }
